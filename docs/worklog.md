@@ -502,3 +502,13 @@
 - Validation: frontend lint/typecheck/tests pass and full quality gate green
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.20
+- Prompt: 0.5.20
+- Title: Release Notes and Post-Release Smoke
+- Summary: Added release notes for v0.1.3 and executed post-release docker smoke checks (health, frontend availability, login, webhook, logs, system status).
+- Files changed: docs/releases/v0.1.3.md, docs/worklog.md
+- Commands executed: docker compose up --build -d; curl smoke sequence
+- Validation: smoke checks passed with backend/frontend healthy and webhook flow confirmed
+- Commit hash: pending
+- Next prompt readiness: yes
