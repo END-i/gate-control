@@ -472,3 +472,13 @@
 - Validation: workflow wiring reviewed (`CI` -> `Versioning` -> `Release`)
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.17
+- Prompt: 0.5.17
+- Title: CI Tooling and Node24 Readiness
+- Summary: Added missing backend lint/typecheck dependencies (ruff, mypy) to requirements and enabled Node24 runtime mode for GitHub JavaScript actions across CI/release/versioning workflows.
+- Files changed: backend/requirements.txt, .github/workflows/ci.yml, .github/workflows/release.yml, .github/workflows/versioning.yml
+- Commands executed: n/a
+- Validation: workflow and dependency updates reviewed for quality-gate compatibility
+- Commit hash: pending
+- Next prompt readiness: yes
