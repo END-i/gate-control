@@ -19,6 +19,7 @@ from core.seed import seed_initial_admin
 settings = get_settings()
 cleanup_task: Optional[asyncio.Task[None]] = None
 MEDIA_DIR = Path(__file__).resolve().parent / "media"
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @asynccontextmanager

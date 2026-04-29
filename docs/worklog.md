@@ -482,3 +482,13 @@
 - Validation: workflow and dependency updates reviewed for quality-gate compatibility
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.18
+- Prompt: 0.5.18
+- Title: Static Media Directory Bootstrap
+- Summary: Prevented startup failures in clean CI environments by creating backend/media before StaticFiles mount.
+- Files changed: backend/main.py
+- Commands executed: ./scripts/check-all.sh
+- Validation: full local quality gate passed after fix
+- Commit hash: pending
+- Next prompt readiness: yes
