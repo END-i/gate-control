@@ -28,6 +28,13 @@ if [[ ! -d "$FRONTEND_DIR" ]]; then
   exit 1
 fi
 
+if [[ ! -f "$FRONTEND_DIR/package.json" ]]; then
+  echo "WARN: frontend package.json not found, skipping frontend checks"
+  SKIP_FRONTEND=1
+else
+  SKIP_FRONTEND=0
+fi
+
 print_step "Backend lint"
 "$PYTHON_BIN" -m ruff check "$BACKEND_DIR"
 
@@ -44,22 +51,27 @@ print_step "Backend typecheck"
 print_step "Backend tests"
 "$PYTHON_BIN" -m pytest "$BACKEND_DIR/tests" -q
 
-print_step "Frontend lint"
-if grep -q '"lint"' "$FRONTEND_DIR/package.json"; then
-  pnpm --dir "$FRONTEND_DIR" lint
-else
-  echo "WARN: frontend lint script not found, using check as fallback"
+if [[ "$SKIP_FRONTEND" -eq 0 ]]; then
+  print_step "Frontend install"
+  pnpm --dir "$FRONTEND_DIR" install --frozen-lockfile
+
+  print_step "Frontend lint"
+  if grep -q '"lint"' "$FRONTEND_DIR/package.json"; then
+    pnpm --dir "$FRONTEND_DIR" lint
+  else
+    echo "WARN: frontend lint script not found, using check as fallback"
+    pnpm --dir "$FRONTEND_DIR" check
+  fi
+
+  print_step "Frontend typecheck"
   pnpm --dir "$FRONTEND_DIR" check
-fi
 
-print_step "Frontend typecheck"
-pnpm --dir "$FRONTEND_DIR" check
-
-print_step "Frontend tests"
-if grep -q '"test:run"' "$FRONTEND_DIR/package.json"; then
-  pnpm --dir "$FRONTEND_DIR" test:run
-else
-  pnpm --dir "$FRONTEND_DIR" test -- --run
+  print_step "Frontend tests"
+  if grep -q '"test:run"' "$FRONTEND_DIR/package.json"; then
+    pnpm --dir "$FRONTEND_DIR" test:run
+  else
+    pnpm --dir "$FRONTEND_DIR" test -- --run
+  fi
 fi
 
 print_step "Backend Docker build"

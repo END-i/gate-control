@@ -492,3 +492,13 @@
 - Validation: full local quality gate passed after fix
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.19
+- Prompt: 0.5.19
+- Title: Frontend pnpm Lint Stability
+- Summary: Fixed pnpm workspace config in frontend and updated quality-gate script to install frontend dependencies before lint/typecheck/tests.
+- Files changed: frontend/pnpm-workspace.yaml, scripts/check-all.sh
+- Commands executed: ./scripts/check-all.sh
+- Validation: frontend lint/typecheck/tests pass and full quality gate green
+- Commit hash: pending
+- Next prompt readiness: yes
