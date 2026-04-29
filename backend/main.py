@@ -22,6 +22,13 @@ MEDIA_DIR = Path(__file__).resolve().parent / "media"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _localhost_origin_regex(frontend_url: str) -> Optional[str]:
+    # If configured frontend is local dev, allow localhost/127.0.0.1 on any port.
+    if frontend_url.startswith("http://localhost") or frontend_url.startswith("http://127.0.0.1"):
+        return r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+    return None
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global cleanup_task
@@ -50,6 +57,7 @@ app = FastAPI(title="ANPR Gate Control API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_url],
+    allow_origin_regex=_localhost_origin_regex(settings.frontend_url),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

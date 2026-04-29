@@ -9,6 +9,16 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup.ts'],
-    include: ['src/tests/**/*.test.ts']
+    include: ['src/tests/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      thresholds: {
+        statements: 95,
+        lines: 95,
+        functions: 90,
+        branches: 65
+      }
+    }
   }
 });

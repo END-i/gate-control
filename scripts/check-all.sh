@@ -5,11 +5,14 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/backend"
 FRONTEND_DIR="$ROOT_DIR/frontend"
 PYTHON_BIN_DEFAULT="$ROOT_DIR/.venv/bin/python"
+PYTHON_BIN_BACKEND_VENV="$BACKEND_DIR/.venv/bin/python"
 
 if [[ -n "${PYTHON_BIN:-}" ]]; then
   PYTHON_BIN="$PYTHON_BIN"
 elif [[ -x "$PYTHON_BIN_DEFAULT" ]]; then
   PYTHON_BIN="$PYTHON_BIN_DEFAULT"
+elif [[ -x "$PYTHON_BIN_BACKEND_VENV" ]]; then
+  PYTHON_BIN="$PYTHON_BIN_BACKEND_VENV"
 else
   PYTHON_BIN="python3"
 fi
@@ -34,6 +37,8 @@ if [[ ! -f "$FRONTEND_DIR/package.json" ]]; then
 else
   SKIP_FRONTEND=0
 fi
+
+RUN_COVERAGE="${RUN_COVERAGE:-0}"
 
 print_step "Backend lint"
 "$PYTHON_BIN" -m ruff check "$BACKEND_DIR"
@@ -86,6 +91,11 @@ if command -v docker >/dev/null 2>&1; then
   docker build -t anpr-frontend "$FRONTEND_DIR"
 else
   echo "WARN: docker not found, skipping frontend image build"
+fi
+
+if [[ "$RUN_COVERAGE" == "1" ]]; then
+  print_step "Coverage (backend + frontend)"
+  "$ROOT_DIR/scripts/coverage-all.sh"
 fi
 
 print_step "All checks passed"
