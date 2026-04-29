@@ -522,3 +522,13 @@
 - Validation: full quality gate passed using project-local environment
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.22
+- Prompt: 0.5.22
+- Title: Backend Root Env Resolution
+- Summary: Fixed backend settings to load `.env` from project root so running uvicorn from `backend/` works without missing required environment variables.
+- Files changed: backend/core/config.py
+- Commands executed: ../.venv/bin/python -c "from core.config import get_settings; ..."
+- Validation: settings resolved successfully from root .env when launched in backend directory
+- Commit hash: pending
+- Next prompt readiness: yes
