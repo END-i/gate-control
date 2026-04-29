@@ -1,0 +1,4 @@
+Single-database Alembic configuration for ANPR backend.
+Run from backend directory:
+  alembic upgrade head
+  alembic revision --autogenerate -m "message"

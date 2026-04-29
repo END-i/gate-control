@@ -219,3 +219,34 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 
 ### Phase 10: Post-MVP Security Hardening
 36. **Prompt 34 (Webhook HMAC Hardening):** "Upgrade webhook authentication from static token to HMAC signature verification. Require headers `X-Webhook-Timestamp` and `X-Webhook-Signature`, compute HMAC-SHA256 over `timestamp + raw_body` using a shared secret, reject stale timestamps (e.g., older than 300 seconds), and use constant-time signature comparison. Keep backward compatibility behind a feature flag (`WEBHOOK_AUTH_MODE=token|hmac`) for gradual rollout. Add unit tests for valid signature, invalid signature, and replay/stale timestamp cases."
+
+---
+
+## Plan Execution Status (2026-04-29)
+
+- [x] Prompt 0: Root setup
+- [~] Prompt 0.5.1-0.5.6: Governance exists in docs, but prompt-level one-commit policy was not followed historically 1:1
+- [x] Prompt 0.5.7: `.env.example` maintained with required variables and defaults
+- [x] Prompt 0.5.8: `scripts/check-all.sh` present and documented
+- [x] Prompt 1: FastAPI async DB settings + CORS from env
+- [x] Prompt 2: Models implemented
+- [x] Prompt 2 (migration): Alembic scaffold + initial migration added under `backend/alembic`
+- [x] Prompt 3: JWT + password hashing
+- [x] Prompt 4: Auth endpoint + admin seed
+- [x] Prompt 5: Vehicle CRUD with pagination
+- [x] Prompt 6: Multipart webhook + async media save
+- [x] Prompt 7: Access logic and logging
+- [x] Prompt 8: Relay integration
+- [x] Prompt 9: Logs API + static media mount
+- [x] Prompt 10: Stats API
+- [x] Prompt 11: SSE stream
+- [x] Prompt 11.1: Manual relay trigger
+- [x] Prompt 12-23: Frontend setup, auth, pages, logs, CSV, image modal, SSE, i18n
+- [x] Prompt 24: `simulator.py`
+- [x] Prompt 25: Backend and frontend Dockerfiles
+- [x] Prompt 26: `docker-compose.yml`
+- [x] Prompt 27: `README.md`
+- [x] Prompt 28-29: Backend and frontend tests
+- [x] Prompt 30: Data-flow diagram added in `docs/data-flow.mmd`
+- [x] Prompt 31-33: Cleanup service, system status indicator, structured logging
+- [x] Prompt 34: HMAC hardening with token/hmac mode switch and tests

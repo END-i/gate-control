@@ -1,0 +1,13 @@
+flowchart LR
+    Camera[ANPR Camera] -->|multipart webhook| BackendWebhook[/FastAPI Webhook /api/webhook/anpr/]
+    BackendWebhook -->|metadata + decision| Postgres[(PostgreSQL)]
+    BackendWebhook -->|image file| Media[(Local Disk media/)]
+
+    BackendWebhook -->|relay trigger request| Relay[Camera Relay Endpoint]
+    Relay --> Camera
+
+    Svelte[Svelte Dashboard] -->|REST| BackendAPI[/FastAPI REST API/]
+    BackendAPI --> Postgres
+    BackendAPI --> Media
+
+    BackendAPI -->|SSE /api/logs/stream| Svelte

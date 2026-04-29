@@ -140,8 +140,24 @@ Frontend coverage thresholds (Vitest):
 - Governance: `docs/GOVERNANCE.md`
 - API contract: `docs/api-contract.md`
 - Architecture: `docs/architecture.md`
+- Data flow (Mermaid): `docs/data-flow.mmd`
 - Plan: `docs/plan.md`
 - Worklog: `docs/worklog.md`
+
+## Database Migrations (Alembic)
+
+Run from project root:
+
+```bash
+backend/.venv/bin/python -m alembic -c backend/alembic.ini upgrade head
+```
+
+Create a new migration after model changes:
+
+```bash
+backend/.venv/bin/python -m alembic -c backend/alembic.ini revision --autogenerate -m "describe change"
+backend/.venv/bin/python -m alembic -c backend/alembic.ini upgrade head
+```
 
 ## Webhook Simulator
 

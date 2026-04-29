@@ -1,21 +1,21 @@
 # Alembic Bootstrap Commands
 
-Run from backend directory.
+Run from project root.
 
 1. Initialize Alembic:
 
 ```bash
-alembic init alembic
+backend/.venv/bin/python -m alembic -c backend/alembic.ini init backend/alembic
 ```
 
 2. Generate first migration after setting `sqlalchemy.url` and importing model metadata in `alembic/env.py`:
 
 ```bash
-alembic revision --autogenerate -m "initial schema"
+backend/.venv/bin/python -m alembic -c backend/alembic.ini revision --autogenerate -m "initial schema"
 ```
 
 3. Apply migration:
 
 ```bash
-alembic upgrade head
+backend/.venv/bin/python -m alembic -c backend/alembic.ini upgrade head
 ```
