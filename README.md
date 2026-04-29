@@ -69,6 +69,18 @@ Run full checks from project root:
 ./scripts/check-all.sh
 ```
 
+## Automated Versioning and Releases
+
+- The workflow in .github/workflows/versioning.yml runs on push to main.
+- It calculates the next semantic version tag using commit messages since the previous release tag:
+	- major for BREAKING CHANGE or ! in Conventional Commit header
+	- minor for feat
+	- patch for all other commits
+- It creates and pushes the next vX.Y.Z tag automatically.
+- The workflow in .github/workflows/release.yml publishes the GitHub Release from that tag.
+
+Manual override is available from GitHub Actions via workflow_dispatch input bump=major|minor|patch.
+
 ## Backup and Restore Runbook
 
 Use these commands from the project root.

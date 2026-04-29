@@ -452,3 +452,13 @@
 - Validation: workflow file created and syntax reviewed
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.15
+- Prompt: 0.5.15
+- Title: Automated Release Versioning
+- Summary: Added GitHub Actions semantic versioning workflow that auto-tags releases from main based on Conventional Commit signals and manual bump override.
+- Files changed: .github/workflows/versioning.yml, README.md
+- Commands executed: n/a
+- Validation: workflow syntax reviewed and integrated with release workflow
+- Commit hash: pending
+- Next prompt readiness: yes

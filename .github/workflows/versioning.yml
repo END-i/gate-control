@@ -1,0 +1,131 @@
+name: Versioning
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Optional manual bump override
+        required: false
+        default: ""
+        type: choice
+        options:
+          - ""
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  create-version-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch --tags --force
+
+          if git tag --points-at HEAD | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "current commit already has a release tag, skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          latest_tag=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | head -n1)
+          if [[ -z "$latest_tag" ]]; then
+            latest_tag="v0.0.0"
+          fi
+
+          manual_bump="${{ github.event.inputs.bump || '' }}"
+          bump="patch"
+
+          if [[ -n "$manual_bump" ]]; then
+            bump="$manual_bump"
+          else
+            range="HEAD"
+            if [[ "$latest_tag" != "v0.0.0" ]]; then
+              range="${latest_tag}..HEAD"
+            fi
+
+            log_text=$(git log --format='%s%n%b' "$range")
+
+            if echo "$log_text" | grep -Eqi 'BREAKING CHANGE|^[a-zA-Z]+\(.*\)!:|^[a-zA-Z]+!:'; then
+              bump="major"
+            elif echo "$log_text" | grep -Eqi '^feat(\(.+\))?:'; then
+              bump="minor"
+            else
+              bump="patch"
+            fi
+          fi
+
+          version_core="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "$version_core"
+
+          case "$bump" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+            *)
+              echo "Invalid bump type: $bump"
+              exit 1
+              ;;
+          esac
+
+          next_tag="v${major}.${minor}.${patch}"
+
+          if git rev-parse "$next_tag" >/dev/null 2>&1; then
+            echo "tag ${next_tag} already exists locally, skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+          echo "bump=$bump" >> "$GITHUB_OUTPUT"
+          echo "next_tag=$next_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        if: steps.version.outputs.skip == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.version.outputs.next_tag }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "$tag" -m "Release $tag"
+          git push origin "$tag"
+
+      - name: Summary
+        shell: bash
+        run: |
+          if [[ "${{ steps.version.outputs.skip }}" == "true" ]]; then
+            echo "Versioning skipped."
+            exit 0
+          fi
+
+          echo "Latest tag: ${{ steps.version.outputs.latest_tag }}"
+          echo "Bump type: ${{ steps.version.outputs.bump }}"
+          echo "Created tag: ${{ steps.version.outputs.next_tag }}"
