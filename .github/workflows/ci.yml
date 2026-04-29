@@ -144,6 +144,7 @@ jobs:
       - name: Run OWASP ZAP baseline scan
         run: |
           docker run --network host --rm \
+            --user "$(id -u):$(id -g)" \
             -v "${PWD}:/zap/wrk" \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py -t http://127.0.0.1:3000 -r zap-report.html

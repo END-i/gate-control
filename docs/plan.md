@@ -380,3 +380,74 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
   - point relay endpoint to timeout/non-2xx mock and validate graceful degradation
 6. End-to-end operational drills:
   - run `npm run doctor` and `npm run smoke` before and after releases
+
+---
+
+## MVP to Product Roadmap
+
+### Priority 1: Product Readiness (Must-Have)
+
+1. Reliability of event processing:
+  - isolate heavy/slow operations from request path
+  - define target throughput and backlog limits
+2. Queue/worker architecture:
+  - move retry-capable integration tasks to worker queue
+  - add dead-letter handling for repeatedly failing tasks
+3. End-to-end idempotency:
+  - enforce dedup and replay-safety on all critical integration paths
+4. Service Level Objectives (SLO):
+  - set availability target for API and webhook processing
+  - set latency and success-rate targets for access decisions
+
+### Priority 2: Production Security
+
+1. Dependency security policy:
+  - remove temporary audit ignores as soon as patched versions are available in package index
+2. Secrets management:
+  - use managed secrets store and periodic secret rotation
+  - separate staging and production secret scopes
+3. RBAC hardening:
+  - map business roles to business operations explicitly
+  - enforce least-privilege access in admin flows
+4. Security gates in CI:
+  - enforce blocking behavior for high/critical findings where patch path exists
+
+### Priority 3: Operations and Recovery
+
+1. Backup and restore:
+  - schedule automated backups for PostgreSQL and media metadata
+  - run regular restore verification in staging
+2. Incident runbooks:
+  - prepare documented response for camera outage, relay outage, DB degradation, and auth failures
+3. Monitoring and alerting:
+  - alert on latency, error rate, queue depth, webhook throughput drops, and relay failure spikes
+4. Staging parity:
+  - maintain production-like staging environment for pre-release validation
+
+### Priority 4: Release Quality and Change Safety
+
+1. Contract tests:
+  - enforce API contract compatibility between frontend and backend
+2. Critical-path E2E:
+  - verify allowed plate opens gate
+  - verify blocked plate denies and never triggers relay
+3. Migration safety:
+  - require migration dry-run and rollback plan validation in staging
+4. Controlled rollout:
+  - add feature flags and progressive rollout for risky changes
+
+## Next Sprint (Highest ROI)
+
+1. Implement queue/worker with retry policy and dead-letter queue
+2. Add backup/restore automation with nightly restore check
+3. Tighten security job policy for actionable high/critical findings
+4. Publish production runbook and SLO/alert dashboard baseline
+5. Expand E2E suite to full happy-path and deny-path with relay side-effect verification
+
+## Product Readiness Exit Criteria
+
+1. 30 consecutive days of stable staging operation without critical incidents
+2. Backup restore validated within target RTO/RPO
+3. CI quality gates and security checks stable and green
+4. System load profile meets target throughput and latency
+5. On-call/operator can complete incident runbook steps without developer intervention
