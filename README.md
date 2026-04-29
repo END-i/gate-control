@@ -44,6 +44,8 @@ backend/.venv/bin/python -m pip install -r backend/requirements.txt
 npm run backend   # backend only
 npm run frontend  # frontend only
 npm run dev       # backend + frontend
+npm run doctor    # health + CORS diagnostics
+npm run smoke     # login/status/stats/logs smoke flow
 ```
 
 Equivalent direct scripts:
@@ -52,6 +54,8 @@ Equivalent direct scripts:
 ./scripts/run-backend.sh
 ./scripts/run-frontend.sh
 ./scripts/run-dev.sh
+./scripts/doctor.sh
+./scripts/smoke-e2e.sh
 ```
 
 Local endpoints (with defaults):
@@ -105,12 +109,31 @@ Run coverage only:
 ./scripts/coverage-all.sh
 ```
 
+Backend coverage gate is enforced by `BACKEND_COVERAGE_MIN` (default `70`).
+
 Frontend coverage thresholds (Vitest):
 
 - statements >= 95
 - lines >= 95
 - functions >= 90
 - branches >= 65
+
+## Troubleshooting
+
+- `Address already in use`: check listeners with `lsof -nP -iTCP:<port> -sTCP:LISTEN`.
+- `ERR_CONNECTION_REFUSED`: make sure frontend `VITE_API_BASE_URL` and backend `BACKEND_PORT` match.
+- CORS errors: run `npm run doctor` and confirm `FRONTEND_URL` matches the browser origin.
+- Local backend DB connection: for local run use `DATABASE_URL` host `localhost`; for compose backend use host `postgres`.
+
+## Security Notes
+
+- Set strong values for `SECRET_KEY`, `ADMIN_PASSWORD`, `WEBHOOK_SHARED_SECRET`.
+- In non-development environments (`APP_ENV` not `development/local/test/dev`), backend refuses to start with `change-me` secrets.
+
+## Media Upload Limits
+
+- Allowed webhook image content types: `image/jpeg`, `image/png`, `image/webp`.
+- Max image payload is controlled by `WEBHOOK_MAX_IMAGE_BYTES` (default `5242880`, 5 MB).
 
 ## Documentation
 

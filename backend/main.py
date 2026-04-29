@@ -22,6 +22,31 @@ MEDIA_DIR = Path(__file__).resolve().parent / "media"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _validate_runtime_secrets() -> None:
+    app_env = os.getenv("APP_ENV", "development").strip().lower()
+    if app_env in {"dev", "development", "local", "test"}:
+        return
+
+    weak_keys: list[str] = []
+    checks = {
+        "SECRET_KEY": settings.secret_key,
+        "ADMIN_PASSWORD": settings.admin_password,
+        "WEBHOOK_SHARED_SECRET": settings.webhook_shared_secret,
+    }
+    if settings.webhook_auth_mode == "hmac":
+        checks["WEBHOOK_HMAC_SECRET"] = settings.webhook_hmac_secret
+
+    for key, value in checks.items():
+        if not value or value.strip().lower() == "change-me":
+            weak_keys.append(key)
+
+    if weak_keys:
+        raise RuntimeError(
+            "Refusing to start with insecure defaults in non-development APP_ENV. "
+            f"Set strong values for: {', '.join(weak_keys)}"
+        )
+
+
 def _localhost_origin_regex(frontend_url: str) -> Optional[str]:
     # If configured frontend is local dev, allow localhost/127.0.0.1 on any port.
     if frontend_url.startswith("http://localhost") or frontend_url.startswith("http://127.0.0.1"):
@@ -33,6 +58,7 @@ def _localhost_origin_regex(frontend_url: str) -> Optional[str]:
 async def lifespan(_: FastAPI):
     global cleanup_task
     configure_logging()
+    _validate_runtime_secrets()
     logger.info("Starting ANPR backend")
     skip_startup_tasks = os.getenv("ANPR_SKIP_STARTUP_TASKS") == "1"
     if not skip_startup_tasks:

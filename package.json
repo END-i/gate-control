@@ -4,6 +4,9 @@
   "scripts": {
     "backend": "./scripts/run-backend.sh",
     "frontend": "./scripts/run-frontend.sh",
-    "dev": "./scripts/run-dev.sh"
+    "dev": "./scripts/run-dev.sh",
+    "doctor": "./scripts/doctor.sh",
+    "smoke": "./scripts/smoke-e2e.sh",
+    "precommit": "./scripts/check-all.sh"
   }
 }

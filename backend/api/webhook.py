@@ -23,6 +23,11 @@ from core.system_status import mark_webhook_received
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 
 MEDIA_ROOT = Path(__file__).resolve().parents[1] / "media"
+ALLOWED_IMAGE_CONTENT_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
 
 
 def _verify_webhook_token(token: str | None) -> None:
@@ -76,15 +81,27 @@ def _verify_webhook_hmac(
 
 
 async def _save_image_async(image: UploadFile) -> str:
+    settings = get_settings()
+    content_type = (image.content_type or "").lower()
+    if content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported image content type")
+
     now = datetime.now(timezone.utc)
     day_path = MEDIA_ROOT / now.strftime("%Y") / now.strftime("%m") / now.strftime("%d")
     day_path.mkdir(parents=True, exist_ok=True)
 
-    suffix = Path(image.filename or "upload.bin").suffix or ".bin"
+    original_suffix = Path(image.filename or "upload.bin").suffix.lower()
+    allowed_suffix = ALLOWED_IMAGE_CONTENT_TYPES[content_type]
+    suffix = original_suffix if original_suffix in ALLOWED_IMAGE_CONTENT_TYPES.values() else allowed_suffix
     file_name = f"{uuid4().hex}{suffix}"
     destination = day_path / file_name
 
     content = await image.read()
+    if not content:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty image payload")
+    if len(content) > settings.webhook_max_image_bytes:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image payload is too large")
+
     async with aiofiles.open(destination, "wb") as output:
         await output.write(content)
 
