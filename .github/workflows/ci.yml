@@ -145,21 +145,30 @@ jobs:
         run: |
           ZAP_OUT_DIR="${RUNNER_TEMP}/zap-out"
           mkdir -p "${ZAP_OUT_DIR}"
-          sudo chown 1000:1000 "${ZAP_OUT_DIR}"
-          chmod 755 "${ZAP_OUT_DIR}"
+          CONTAINER_NAME="zap-baseline-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 
-          docker run --network host --rm \
-            -v "${ZAP_OUT_DIR}:/zap/wrk:rw" \
+          docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+
+          set +e
+          docker run --network host --name "${CONTAINER_NAME}" \
             ghcr.io/zaproxy/zaproxy:stable \
-            zap-baseline.py -t http://127.0.0.1:3000 -r /zap/wrk/zap-report.html
+            zap-baseline.py -t http://127.0.0.1:3000 -r /tmp/zap-report.html
+          ZAP_EXIT=$?
+          set -e
+
+          docker cp "${CONTAINER_NAME}:/tmp/zap-report.html" "${ZAP_OUT_DIR}/zap-report.html" || true
+          docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 
           test -f "${ZAP_OUT_DIR}/zap-report.html"
+          exit "${ZAP_EXIT}"
 
       - name: Upload ZAP report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
           path: ${{ runner.temp }}/zap-out/zap-report.html
+          if-no-files-found: warn
 
       - name: Stop stack
         if: always()
