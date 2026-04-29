@@ -16,7 +16,7 @@ services:
       context: ./backend
     restart: unless-stopped
     env_file:
-      - ./.env
+      - ${COMPOSE_ENV_FILE:-./.env}
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/anpr
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}

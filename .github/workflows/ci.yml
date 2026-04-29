@@ -128,7 +128,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Start stack
-        run: docker compose up -d --build
+        run: COMPOSE_ENV_FILE=./.env.ci docker compose --env-file .env.ci up -d --build
 
       - name: Wait for frontend readiness
         run: |
@@ -156,4 +156,4 @@ jobs:
 
       - name: Stop stack
         if: always()
-        run: docker compose down -v
+        run: COMPOSE_ENV_FILE=./.env.ci docker compose --env-file .env.ci down -v
