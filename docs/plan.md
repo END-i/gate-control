@@ -250,3 +250,98 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - [x] Prompt 30: Data-flow diagram added in `docs/data-flow.mmd`
 - [x] Prompt 31-33: Cleanup service, system status indicator, structured logging
 - [x] Prompt 34: HMAC hardening with token/hmac mode switch and tests
+
+### Final Done Marker
+
+- Date: 2026-04-29
+- Baseline completion commit: `262fa11`
+- Post-hardening/operations commit: `812f264`
+- Status: MVP + reliability + security hardening complete for local and compose environments
+
+---
+
+## Deployment Plan (Proposed)
+
+### Stage 1: Pre-deploy gates
+
+1. Run local gate: `./scripts/check-all.sh`
+2. Run smoke checks: `npm run doctor` and `npm run smoke`
+3. Ensure secrets are non-default (`APP_ENV=production` blocks weak defaults)
+
+### Stage 2: Build and artifact strategy
+
+1. Build backend image from `backend/Dockerfile`
+2. Build frontend image from `frontend/Dockerfile` with `VITE_API_BASE_URL` build arg
+3. Tag images with immutable version (`vX.Y.Z`) and commit SHA
+
+### Stage 3: Environment promotion
+
+1. Dev -> Staging -> Production promotion using the same image artifacts
+2. Apply DB migrations with Alembic before backend rollout:
+  - `python -m alembic -c backend/alembic.ini upgrade head`
+3. Roll backend first, then frontend
+
+### Stage 4: Runtime verification
+
+1. Health probe: `/health`
+2. Auth smoke: `/api/auth/login`, `/api/auth/me`
+3. Business smoke: `/api/system/status`, `/api/stats`, `/api/logs`
+4. CORS probe for expected origin
+
+### Stage 5: Rollback strategy
+
+1. Keep previous image tag available
+2. Roll back application image first
+3. If migration introduced incompatible changes, maintain backward-compatible migrations or explicit down migration plan
+
+---
+
+## Security & Accuracy Verification Plan
+
+### Security checks
+
+1. Secrets policy:
+  - enforce strong values for `SECRET_KEY`, `ADMIN_PASSWORD`, `WEBHOOK_SHARED_SECRET`, and `WEBHOOK_HMAC_SECRET` (when HMAC mode)
+2. Webhook hardening:
+  - prefer `WEBHOOK_AUTH_MODE=hmac` in production
+  - monitor failed signature and stale timestamp rates
+3. Input hardening:
+  - allow only image/jpeg, image/png, image/webp
+  - enforce `WEBHOOK_MAX_IMAGE_BYTES`
+4. Transport and infra:
+  - terminate TLS at ingress/reverse proxy
+  - restrict backend exposure to trusted networks
+5. Access control:
+  - verify all admin routes require auth
+  - validate CORS origin policy before release
+
+### Accuracy/reliability checks
+
+1. Data correctness:
+  - validate plate normalization and access decision consistency
+2. Time semantics:
+  - confirm UTC timestamps (`Z`) in APIs and logs
+3. Regression guardrails:
+  - backend unit tests + frontend unit tests + smoke checks in CI
+4. Operational visibility:
+  - monitor webhook receive rate, deny ratio, relay success/failure rate
+5. Periodic audits:
+  - weekly review of auth failures, relay timeouts, and cleanup behavior
+
+---
+
+## Real-World Emulation Options
+
+1. Synthetic webhook traffic (already available):
+  - use `simulator.py` for periodic multipart events
+2. Burst/load simulation:
+  - run parallel simulator instances with varied intervals and payload sizes
+3. Data quality simulation:
+  - mix valid/invalid plates, malformed files, unsupported content types
+4. Security scenario simulation:
+  - replay old HMAC timestamp payloads
+  - send invalid signatures and verify rejection/monitoring
+5. Hardware fault simulation:
+  - point relay endpoint to timeout/non-2xx mock and validate graceful degradation
+6. End-to-end operational drills:
+  - run `npm run doctor` and `npm run smoke` before and after releases

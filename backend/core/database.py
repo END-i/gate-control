@@ -19,5 +19,17 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
+    app_env = (getattr(settings, "app_env", None) or "development").strip().lower()
+    auto_create = (getattr(settings, "auto_create_schema", None) or "").strip()
+
+    if auto_create:
+        enabled = auto_create.lower() in {"1", "true", "yes", "on"}
+    else:
+        # Default policy: create_all only in local/dev/test environments.
+        enabled = app_env in {"development", "dev", "local", "test"}
+
+    if not enabled:
+        return
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

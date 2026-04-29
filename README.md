@@ -141,10 +141,16 @@ Frontend coverage thresholds (Vitest):
 - API contract: `docs/api-contract.md`
 - Architecture: `docs/architecture.md`
 - Data flow (Mermaid): `docs/data-flow.mmd`
+- Project structure reference: `docs/project-structure-reference.md`
 - Plan: `docs/plan.md`
 - Worklog: `docs/worklog.md`
 
 ## Database Migrations (Alembic)
+
+Migration policy:
+
+- Production/staging: Alembic is the source of truth for schema changes.
+- Local dev/test: `create_all` runs only in local/dev/test environments by default (or via `AUTO_CREATE_SCHEMA=1`).
 
 Run from project root:
 

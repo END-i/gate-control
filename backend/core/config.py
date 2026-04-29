@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     webhook_hmac_secret: str = Field(default="", alias="WEBHOOK_HMAC_SECRET")
     webhook_max_skew_seconds: int = Field(default=300, alias="WEBHOOK_MAX_SKEW_SECONDS")
     webhook_max_image_bytes: int = Field(default=5_242_880, alias="WEBHOOK_MAX_IMAGE_BYTES")
+    app_env: str = Field(default="development", alias="APP_ENV")
+    auto_create_schema: str = Field(default="", alias="AUTO_CREATE_SCHEMA")
     auth_login_rate_limit: int = Field(default=20, alias="AUTH_LOGIN_RATE_LIMIT")
     auth_login_rate_window_seconds: int = Field(default=60, alias="AUTH_LOGIN_RATE_WINDOW_SECONDS")
     webhook_rate_limit: int = Field(default=120, alias="WEBHOOK_RATE_LIMIT")

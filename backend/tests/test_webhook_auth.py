@@ -72,3 +72,33 @@ def test_webhook_hmac_mode_enforced(client, monkeypatch):
     )
 
     assert response.status_code == 401
+
+
+def test_webhook_hmac_mode_valid_signature(client, monkeypatch):
+    monkeypatch.setenv('WEBHOOK_AUTH_MODE', 'hmac')
+
+    timestamp = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+    boundary = 'X-BOUNDARY-12345'
+    body = (
+        f'--{boundary}\r\n'
+        'Content-Disposition: form-data; name="plate_number"\r\n\r\n'
+        'AA1234BB\r\n'
+        f'--{boundary}\r\n'
+        'Content-Disposition: form-data; name="image"; filename="sample.jpg"\r\n'
+        'Content-Type: image/jpeg\r\n\r\n'
+        'data\r\n'
+        f'--{boundary}--\r\n'
+    ).encode('utf-8')
+    signature = _build_signature('hmac-secret', timestamp, body)
+
+    response = client.post(
+        '/api/webhook/anpr',
+        data=body,
+        headers={
+            'Content-Type': f'multipart/form-data; boundary={boundary}',
+            'X-Webhook-Timestamp': timestamp,
+            'X-Webhook-Signature': signature,
+        },
+    )
+
+    assert response.status_code == 200
