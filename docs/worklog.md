@@ -512,3 +512,13 @@
 - Validation: smoke checks passed with backend/frontend healthy and webhook flow confirmed
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.21
+- Prompt: 0.5.21
+- Title: Project-local Python Environment
+- Summary: Updated quality-gate script to use project-local `.venv` by default and validated full check-all flow with local environment.
+- Files changed: scripts/check-all.sh
+- Commands executed: python3 -m venv .venv; ./.venv/bin/python -m pip install -r backend/requirements.txt; ./scripts/check-all.sh
+- Validation: full quality gate passed using project-local environment
+- Commit hash: pending
+- Next prompt readiness: yes

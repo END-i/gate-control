@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/backend"
 FRONTEND_DIR="$ROOT_DIR/frontend"
-PYTHON_BIN_DEFAULT="/Users/end-i/work/pet/.venv/bin/python"
+PYTHON_BIN_DEFAULT="$ROOT_DIR/.venv/bin/python"
 
 if [[ -n "${PYTHON_BIN:-}" ]]; then
   PYTHON_BIN="$PYTHON_BIN"
