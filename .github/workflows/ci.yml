@@ -137,6 +137,7 @@ jobs:
               exit 0
             fi
             echo "waiting for frontend..."
+            sleep 2
           done
           echo "frontend did not become ready in time"
           exit 1
@@ -151,7 +152,7 @@ jobs:
 
           set +e
           docker run --network host --name "${CONTAINER_NAME}" \
-            ghcr.io/zaproxy/zaproxy:stable \
+            ghcr.io/zaproxy/zaproxy:stable-baseline \
             zap-baseline.py -t http://127.0.0.1:3000 -r /tmp/zap-report.html
           ZAP_EXIT=$?
           set -e
