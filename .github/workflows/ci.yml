@@ -143,16 +143,23 @@ jobs:
 
       - name: Run OWASP ZAP baseline scan
         run: |
+          ZAP_OUT_DIR="${RUNNER_TEMP}/zap-out"
+          mkdir -p "${ZAP_OUT_DIR}"
+          sudo chown 1000:1000 "${ZAP_OUT_DIR}"
+          chmod 755 "${ZAP_OUT_DIR}"
+
           docker run --network host --rm \
-            -v "${PWD}:/zap/wrk" \
+            -v "${ZAP_OUT_DIR}:/zap/wrk:rw" \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py -t http://127.0.0.1:3000 -r /zap/wrk/zap-report.html
+
+          test -f "${ZAP_OUT_DIR}/zap-report.html"
 
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap-report.html
+          path: ${{ runner.temp }}/zap-out/zap-report.html
 
       - name: Stop stack
         if: always()
