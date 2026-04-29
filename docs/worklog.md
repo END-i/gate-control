@@ -532,3 +532,13 @@
 - Validation: settings resolved successfully from root .env when launched in backend directory
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.23
+- Prompt: 0.5.23
+- Title: README Local Run Commands
+- Summary: Added clear local startup runbook for backend and frontend with copy-paste commands, port override guidance, and login instructions.
+- Files changed: README.md
+- Commands executed: n/a
+- Validation: instructions reviewed against current project structure and env setup
+- Commit hash: pending
+- Next prompt readiness: yes

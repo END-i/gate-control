@@ -39,6 +39,66 @@ Frontend variable:
 
 - VITE_API_BASE_URL (usually http://localhost:8000/api)
 
+## Fast Local Start (Backend + Frontend)
+
+Use this mode for daily development without Docker.
+
+### 1) Prepare env files (once)
+
+```bash
+cp .env.example .env
+cp frontend/.env frontend/.env.local
+```
+
+If port 3000 is already used on your machine, update .env:
+
+```bash
+FRONTEND_PORT=3001
+FRONTEND_URL=http://localhost:3001
+```
+
+### 2) Start backend (terminal #1)
+
+Run from project root:
+
+```bash
+cd /Users/end-i/work/pet/GateControl/anpr-system
+python3 -m venv .venv
+./.venv/bin/python -m pip install -r backend/requirements.txt
+cd backend
+../.venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Backend endpoints:
+
+- API health: http://localhost:8000/health
+- Swagger UI: http://localhost:8000/docs
+
+### 3) Start frontend (terminal #2)
+
+Run from project root:
+
+```bash
+cd /Users/end-i/work/pet/GateControl/anpr-system/frontend
+pnpm install
+pnpm dev --host --port 3000
+```
+
+Frontend URL:
+
+- http://localhost:3000
+
+If you changed FRONTEND_PORT in .env to 3001, start frontend on 3001:
+
+```bash
+pnpm dev --host --port 3001
+```
+
+### 4) Login
+
+- Username: admin
+- Password: value of ADMIN_PASSWORD from .env (default is change-me)
+
 ## Start with Docker Compose
 
 1. Copy and configure environment files:
