@@ -412,3 +412,13 @@
 - Validation: no deprecation warnings in backend tests; full quality gate passed
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.11
+- Prompt: 0.5.11
+- Title: Release Candidate v0.1.0
+- Summary: Ran full quality gate for release candidate, documented release notes, and prepared version tag publication workflow.
+- Files changed: docs/releases/v0.1.0.md, docs/worklog.md
+- Commands executed: ./scripts/check-all.sh
+- Validation: all checks passed; docker build steps skipped due to unavailable docker CLI in environment
+- Commit hash: pending
+- Next prompt readiness: yes
