@@ -442,3 +442,13 @@
 - Validation: full quality gate passed (backend/frontend lint/typecheck/tests and docker builds)
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.14
+- Prompt: 0.5.14
+- Title: Automated GitHub Releases
+- Summary: Added GitHub Actions workflow that auto-publishes releases on tag push (`v*`), using `docs/releases/<tag>.md` when available and generated notes otherwise.
+- Files changed: .github/workflows/release.yml
+- Commands executed: n/a
+- Validation: workflow file created and syntax reviewed
+- Commit hash: pending
+- Next prompt readiness: yes
