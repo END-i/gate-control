@@ -432,3 +432,13 @@
 - Validation: quality gate passed; docker services started; smoke checks passed on localhost:8000 and localhost:3001
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.13
+- Prompt: 0.5.13
+- Title: Production Hardening v0.1.1
+- Summary: Added client-IP rate limiting for login and ANPR webhook, introduced security response headers middleware, and documented database/media backup-restore runbook.
+- Files changed: backend/core/rate_limit.py, backend/api/auth.py, backend/api/webhook.py, backend/main.py, backend/core/config.py, .env.example, README.md
+- Commands executed: ./scripts/check-all.sh
+- Validation: full quality gate passed (backend/frontend lint/typecheck/tests and docker builds)
+- Commit hash: pending
+- Next prompt readiness: yes

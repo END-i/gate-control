@@ -69,6 +69,42 @@ Run full checks from project root:
 ./scripts/check-all.sh
 ```
 
+## Backup and Restore Runbook
+
+Use these commands from the project root.
+
+### Create backups
+
+1. PostgreSQL dump:
+
+```bash
+docker compose exec -T postgres pg_dump -U postgres -d anpr > backup-anpr.sql
+```
+
+2. Media files archive:
+
+```bash
+docker run --rm -v anpr-system_media_data:/data -v "$PWD":/backup alpine \
+	sh -c "cd /data && tar czf /backup/backup-media.tar.gz ."
+```
+
+### Restore backups
+
+1. Restore PostgreSQL dump:
+
+```bash
+cat backup-anpr.sql | docker compose exec -T postgres psql -U postgres -d anpr
+```
+
+2. Restore media archive:
+
+```bash
+docker run --rm -v anpr-system_media_data:/data -v "$PWD":/backup alpine \
+	sh -c "rm -rf /data/* && tar xzf /backup/backup-media.tar.gz -C /data"
+```
+
+Note: adjust volume name if your compose project name differs.
+
 ## Webhook Simulator
 
 Send mock ANPR events every 10 seconds:

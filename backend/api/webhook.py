@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import get_settings
 from core.database import get_db
 from core.hardware import trigger_relay
+from core.rate_limit import enforce_rate_limit
 from crud.access_log import create_access_log
 from crud.vehicle import get_vehicle_by_plate
 from models.vehicle import VehicleStatus
@@ -99,6 +100,14 @@ async def handle_anpr_webhook(
     x_webhook_signature: str | None = Header(default=None, alias="X-Webhook-Signature"),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str | bool]:
+    settings = get_settings()
+    enforce_rate_limit(
+        request,
+        scope="webhook_anpr",
+        limit=settings.webhook_rate_limit,
+        window_seconds=settings.webhook_rate_window_seconds,
+    )
+
     raw_body = await request.body()
     form = await request.form()
 
@@ -108,8 +117,6 @@ async def handle_anpr_webhook(
     is_upload = isinstance(image, UploadFile) or (hasattr(image, "filename") and hasattr(image, "read"))
     if not isinstance(plate_number, str) or not is_upload:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid multipart payload")
-
-    settings = get_settings()
 
     if settings.webhook_auth_mode == "token":
         _verify_webhook_token(x_webhook_token)
