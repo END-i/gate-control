@@ -1,0 +1,9 @@
+{
+  "name": "anpr-system",
+  "private": true,
+  "scripts": {
+    "backend": "./scripts/run-backend.sh",
+    "frontend": "./scripts/run-frontend.sh",
+    "dev": "./scripts/run-dev.sh"
+  }
+}

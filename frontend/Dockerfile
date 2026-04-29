@@ -5,6 +5,8 @@ RUN corepack enable && pnpm install --frozen-lockfile
 
 FROM node:22-alpine AS build
 WORKDIR /app
+ARG VITE_API_BASE_URL=http://localhost:8010/api
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN corepack enable && pnpm run build

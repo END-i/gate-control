@@ -33,7 +33,8 @@ coverage/
 
 # Logs
 *.log
-logs/
+/logs/
+/backend/logs/
 
 # Runtime media uploads
 backend/media/
