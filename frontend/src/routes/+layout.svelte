@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onDestroy } from 'svelte';
@@ -19,12 +20,15 @@
 
 	setupI18n();
 
-	const unsubscribe = authToken.subscribe((token) => {
-		const pathname = get(page).url.pathname;
-		if (!token && !pathname.startsWith('/login')) {
-			goto('/login');
-		}
-	});
+	let unsubscribe = () => {};
+	if (browser) {
+		unsubscribe = authToken.subscribe((token) => {
+			const pathname = get(page).url.pathname;
+			if (!token && !pathname.startsWith('/login')) {
+				goto('/login');
+			}
+		});
+	}
 
 	onDestroy(() => {
 		unsubscribe();

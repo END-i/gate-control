@@ -12,6 +12,7 @@ from loguru import logger
 from api.router import api_router
 from core.cleanup import run_cleanup_service
 from core.config import get_settings
+from core.database import init_db
 from core.logging_config import configure_logging
 from core.seed import seed_initial_admin
 
@@ -27,6 +28,7 @@ async def lifespan(_: FastAPI):
     logger.info("Starting ANPR backend")
     skip_startup_tasks = os.getenv("ANPR_SKIP_STARTUP_TASKS") == "1"
     if not skip_startup_tasks:
+        await init_db()
         await seed_initial_admin()
         cleanup_task = asyncio.create_task(run_cleanup_service(days=30, interval_hours=24))
     try:

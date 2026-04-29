@@ -422,3 +422,13 @@
 - Validation: all checks passed; docker build steps skipped due to unavailable docker CLI in environment
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.12
+- Prompt: 0.5.12
+- Title: Docker Runtime Hardening and Smoke Run
+- Summary: Implemented container startup fixes (DB schema bootstrap, bcrypt pin, SSR-safe layout redirect, configurable compose ports) and completed dockerized smoke flow: health, frontend 200, auth login, webhook denied and opened paths, logs and system status checks.
+- Files changed: docker-compose.yml, .env.example, backend/core/database.py, backend/main.py, backend/requirements.txt, frontend/src/routes/+layout.svelte
+- Commands executed: docker-compose up --build -d; curl smoke checks; ./scripts/check-all.sh
+- Validation: quality gate passed; docker services started; smoke checks passed on localhost:8000 and localhost:3001
+- Commit hash: pending
+- Next prompt readiness: yes
