@@ -16,6 +16,8 @@ from core.database import get_db
 from core.hardware import trigger_relay
 from core.rate_limit import enforce_rate_limit
 from crud.access_log import create_access_log
+from crud.security_audit import create_security_audit_event
+from crud.webhook_event import register_webhook_event
 from crud.vehicle import get_vehicle_by_plate
 from models.vehicle import VehicleStatus
 from core.system_status import mark_webhook_received
@@ -128,6 +130,10 @@ async def handle_anpr_webhook(
     raw_body = await request.body()
     form = await request.form()
 
+    event_key = request.headers.get("X-Event-Id")
+    if not event_key:
+        event_key = hashlib.sha256(raw_body).hexdigest()
+
     plate_number = form.get("plate_number")
     image = form.get("image")
 
@@ -139,7 +145,24 @@ async def handle_anpr_webhook(
         _verify_webhook_token(x_webhook_token)
     else:
         _verify_webhook_hmac(raw_body, x_webhook_timestamp, x_webhook_signature)
+
     clean_plate = plate_number.replace(" ", "").upper()
+    is_new_event = await register_webhook_event(db, event_key=event_key, plate_number=clean_plate)
+    if not is_new_event:
+        await create_security_audit_event(
+            db,
+            event_type="webhook_duplicate",
+            actor="anpr-webhook",
+            success=True,
+            details=f"Duplicate webhook skipped event_key={event_key}",
+        )
+        return {
+            "status": "duplicate",
+            "plate": clean_plate,
+            "image_path": "",
+            "relay_triggered": False,
+        }
+
     image_path = await _save_image_async(image)
     mark_webhook_received()
     logger.info('Webhook received for plate {}', clean_plate)
@@ -157,6 +180,14 @@ async def handle_anpr_webhook(
     relay_triggered = False
     if is_allowed:
         relay_triggered = await trigger_relay()
+
+    await create_security_audit_event(
+        db,
+        event_type="webhook_processed",
+        actor="anpr-webhook",
+        success=True,
+        details=f"plate={clean_plate} granted={is_allowed} relay={relay_triggered}",
+    )
 
     logger.info(
         'Webhook processed plate={} granted={} relay_triggered={} image_path={}',

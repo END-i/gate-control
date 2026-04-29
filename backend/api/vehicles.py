@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import get_settings
 from core.database import get_db
-from core.dependencies import get_current_admin
+from core.dependencies import get_current_admin, require_roles
+from core.rate_limit import enforce_rate_limit
 from crud.vehicle import (
     create_vehicle,
     delete_vehicle,
@@ -11,7 +13,7 @@ from crud.vehicle import (
     list_vehicles,
     update_vehicle,
 )
-from models.admin import Admin
+from models.admin import Admin, AdminRole
 from schemas.vehicle import VehicleCreate, VehicleListResponse, VehicleRead, VehicleUpdate
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
@@ -31,9 +33,17 @@ async def get_vehicles(
 @router.post("", response_model=VehicleRead, status_code=status.HTTP_201_CREATED)
 async def post_vehicle(
     payload: VehicleCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    _: Admin = Depends(get_current_admin),
+    _: Admin = Depends(require_roles(AdminRole.ADMIN, AdminRole.OPERATOR)),
 ) -> VehicleRead:
+    settings = get_settings()
+    enforce_rate_limit(
+        request,
+        scope="vehicles_mutation",
+        limit=settings.sensitive_rate_limit,
+        window_seconds=settings.sensitive_rate_window_seconds,
+    )
     existing = await get_vehicle_by_plate(db, payload.license_plate)
     if existing is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Vehicle already exists")
@@ -46,9 +56,17 @@ async def post_vehicle(
 async def put_vehicle(
     vehicle_id: int,
     payload: VehicleUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    _: Admin = Depends(get_current_admin),
+    _: Admin = Depends(require_roles(AdminRole.ADMIN, AdminRole.OPERATOR)),
 ) -> VehicleRead:
+    settings = get_settings()
+    enforce_rate_limit(
+        request,
+        scope="vehicles_mutation",
+        limit=settings.sensitive_rate_limit,
+        window_seconds=settings.sensitive_rate_window_seconds,
+    )
     vehicle = await get_vehicle(db, vehicle_id)
     if vehicle is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found")
@@ -65,9 +83,17 @@ async def put_vehicle(
 @router.delete("/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_vehicle(
     vehicle_id: int,
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    _: Admin = Depends(get_current_admin),
+    _: Admin = Depends(require_roles(AdminRole.ADMIN, AdminRole.OPERATOR)),
 ) -> None:
+    settings = get_settings()
+    enforce_rate_limit(
+        request,
+        scope="vehicles_mutation",
+        limit=settings.sensitive_rate_limit,
+        window_seconds=settings.sensitive_rate_window_seconds,
+    )
     vehicle = await get_vehicle(db, vehicle_id)
     if vehicle is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found")

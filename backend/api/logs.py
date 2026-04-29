@@ -8,10 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import get_settings
 from core.database import get_db
-from core.dependencies import get_admin_from_token, get_current_admin
+from core.dependencies import get_admin_from_token, require_roles
+from core.rate_limit import enforce_rate_limit
 from crud.logs import list_access_logs, list_access_logs_after_id
-from models.admin import Admin
+from models.admin import Admin, AdminRole
 from models.access_log import AccessLog
 from schemas.log import AccessLogListResponse
 
@@ -40,7 +42,7 @@ async def get_logs(
     date_from: datetime | None = Query(default=None),
     date_to: datetime | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    _: Admin = Depends(get_current_admin),
+    _: Admin = Depends(require_roles(AdminRole.ADMIN, AdminRole.OPERATOR, AdminRole.VIEWER)),
 ) -> AccessLogListResponse:
     items, total = await list_access_logs(
         db,
@@ -62,7 +64,17 @@ async def stream_logs(
     if not access_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing access token")
 
-    await get_admin_from_token(access_token, db)
+    admin = await get_admin_from_token(access_token, db)
+    if admin.role not in {AdminRole.ADMIN, AdminRole.OPERATOR, AdminRole.VIEWER}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
+
+    settings = get_settings()
+    enforce_rate_limit(
+        request,
+        scope="logs_stream",
+        limit=settings.sensitive_rate_limit,
+        window_seconds=settings.sensitive_rate_window_seconds,
+    )
 
     last_id = 0
 

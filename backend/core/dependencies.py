@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from core.security import decode_access_token
 from crud.admin import get_admin_by_username
-from models.admin import Admin
+from models.admin import Admin, AdminRole
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -38,3 +38,14 @@ async def get_admin_from_token(token: str, db: AsyncSession) -> Admin:
         raise credentials_error
 
     return admin
+
+
+def require_roles(*allowed_roles: AdminRole):
+    allowed = {role.value for role in allowed_roles}
+
+    async def _require(current_admin: Admin = Depends(get_current_admin)) -> Admin:
+        if current_admin.role.value not in allowed:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
+        return current_admin
+
+    return _require

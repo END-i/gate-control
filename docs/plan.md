@@ -258,6 +258,41 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - Post-hardening/operations commit: `812f264`
 - Status: MVP + reliability + security hardening complete for local and compose environments
 
+## Expansion Wave (2026-04-30)
+
+### Implemented in this wave
+
+- [x] RBAC baseline (`admin`, `operator`, `viewer`) with route-level enforcement
+- [x] Security audit events for login, manual relay trigger, and duplicate webhook detection
+- [x] Webhook idempotency via `X-Event-Id`/body hash dedup (`webhook_events` table)
+- [x] Broader sensitive-endpoint rate limiting controls (`SENSITIVE_RATE_LIMIT`)
+- [x] Frontend browser E2E smoke via Playwright
+- [x] CI security lanes: Bandit (SAST), pip-audit, pnpm audit, ZAP baseline (DAST, non-blocking)
+- [x] Observability baseline: Prometheus metrics endpoint (`/metrics`)
+- [x] Docker backend runtime env parametrization (`BACKEND_HOST`, `BACKEND_PORT`, compose wiring)
+
+### Contracts and change policy
+
+1. API compatibility:
+  - non-breaking additions are allowed in minor versions (`vX.Y.0`)
+  - removals/behavioral breaks require major version bump and migration notes
+2. DB migration policy:
+  - every schema change ships with Alembic migration
+  - destructive migrations require explicit operator approval and rollback plan
+3. Rollback policy:
+  - keep N-1 image available
+  - migration compatibility must allow one-version rollback window where feasible
+
+### Planned next slices (not yet implemented)
+
+1. Queue/worker isolation for heavy integrations (camera retries, relay retry queue)
+2. Automated backup/restore jobs for Postgres + periodic restore validation in staging
+3. Production profile hardening (strict CSP, mTLS/internal auth between services, secret manager)
+4. Advanced test families: contract/load/chaos/property/migration tests in CI matrix
+5. Media storage strategy options in production:
+  - object storage (S3-compatible) with lifecycle policies
+  - encrypted block storage with retention classes
+
 ---
 
 ## Deployment Plan (Proposed)

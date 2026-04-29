@@ -2,15 +2,15 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 
-from core.dependencies import get_current_admin
+from core.dependencies import require_roles
 from core.system_status import get_last_webhook_timestamp, is_system_online
-from models.admin import Admin
+from models.admin import Admin, AdminRole
 
 router = APIRouter(prefix='/system', tags=['system'])
 
 
 @router.get('/status')
-async def get_system_status(_: Admin = Depends(get_current_admin)) -> dict[str, object]:
+async def get_system_status(_: Admin = Depends(require_roles(AdminRole.ADMIN, AdminRole.OPERATOR, AdminRole.VIEWER))) -> dict[str, object]:
     last_seen = get_last_webhook_timestamp()
 
     if last_seen is None:

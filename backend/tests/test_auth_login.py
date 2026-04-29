@@ -5,6 +5,7 @@ def test_login_success(client):
     data = response.json()
     assert 'access_token' in data
     assert data['token_type'] == 'bearer'
+    assert data['role'] == 'admin'
 
 
 def test_login_invalid_credentials(client):
@@ -27,3 +28,4 @@ def test_auth_me_success(client):
 
     assert response.status_code == 200
     assert response.json()['username'] == 'admin'
+    assert response.json()['role'] == 'admin'

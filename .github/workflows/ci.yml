@@ -40,3 +40,116 @@ jobs:
 
       - name: Run quality gate
         run: ./scripts/check-all.sh
+
+  frontend-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run frontend e2e smoke tests
+        working-directory: frontend
+        run: pnpm run test:e2e
+
+  security-sast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt
+          python -m pip install bandit pip-audit
+
+      - name: Run Bandit (SAST)
+        run: bandit -q -r backend -x backend/tests,backend/alembic
+
+      - name: Run pip-audit
+        run: pip-audit -r backend/requirements.txt
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit frontend dependencies
+        working-directory: frontend
+        run: pnpm audit --audit-level high
+
+  dast-zap:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start stack
+        run: docker compose up -d --build
+
+      - name: Wait for frontend readiness
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:3000 >/dev/null; then
+              exit 0
+            fi
+            echo "waiting for frontend..."
+          done
+          echo "frontend did not become ready in time"
+          exit 1
+
+      - name: Run OWASP ZAP baseline scan
+        run: |
+          docker run --network host --rm \
+            -v "${PWD}:/zap/wrk" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t http://127.0.0.1:3000 -r zap-report.html
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-report.html
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v

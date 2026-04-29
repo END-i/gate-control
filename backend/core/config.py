@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     webhook_rate_window_seconds: int = Field(default=60, alias="WEBHOOK_RATE_WINDOW_SECONDS")
     admin_username: str = Field(alias="ADMIN_USERNAME")
     admin_password: str = Field(alias="ADMIN_PASSWORD")
+    admin_role: str = Field(default="admin", alias="ADMIN_ROLE")
+    sensitive_rate_limit: int = Field(default=60, alias="SENSITIVE_RATE_LIMIT")
+    sensitive_rate_window_seconds: int = Field(default=60, alias="SENSITIVE_RATE_WINDOW_SECONDS")
 
 
 @lru_cache

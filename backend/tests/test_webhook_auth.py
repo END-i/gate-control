@@ -102,3 +102,26 @@ def test_webhook_hmac_mode_valid_signature(client, monkeypatch):
     )
 
     assert response.status_code == 200
+
+
+def test_webhook_duplicate_event_id_skips_processing(client, monkeypatch):
+    monkeypatch.setenv('WEBHOOK_AUTH_MODE', 'token')
+
+    headers = {
+        'X-Webhook-Token': 'webhook-secret',
+        'X-Event-Id': 'evt-123',
+    }
+    payload = {
+        'plate_number': 'AA1234BB',
+    }
+    files = {
+        'image': ('sample.jpg', b'data', 'image/jpeg'),
+    }
+
+    first = client.post('/api/webhook/anpr', data=payload, files=files, headers=headers)
+    second = client.post('/api/webhook/anpr', data=payload, files=files, headers=headers)
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert second.json()['status'] == 'duplicate'
+    assert second.json()['relay_triggered'] is False
