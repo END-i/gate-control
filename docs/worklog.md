@@ -462,3 +462,13 @@
 - Validation: workflow syntax reviewed and integrated with release workflow
 - Commit hash: pending
 - Next prompt readiness: yes
+
+### Prompt 0.5.16
+- Prompt: 0.5.16
+- Title: CI-Gated Version Automation
+- Summary: Added dedicated CI workflow and gated automatic tag versioning to run only after successful CI on main.
+- Files changed: .github/workflows/ci.yml, .github/workflows/versioning.yml, README.md
+- Commands executed: n/a
+- Validation: workflow wiring reviewed (`CI` -> `Versioning` -> `Release`)
+- Commit hash: pending
+- Next prompt readiness: yes

@@ -71,7 +71,8 @@ Run full checks from project root:
 
 ## Automated Versioning and Releases
 
-- The workflow in .github/workflows/versioning.yml runs on push to main.
+- The workflow in .github/workflows/ci.yml runs quality checks for push/PR to main.
+- The workflow in .github/workflows/versioning.yml runs only after CI success on main.
 - It calculates the next semantic version tag using commit messages since the previous release tag:
 	- major for BREAKING CHANGE or ! in Conventional Commit header
 	- minor for feat
