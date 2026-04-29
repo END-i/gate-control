@@ -1,0 +1,77 @@
+{
+  "common": {
+    "loading": "Завантаження...",
+    "logout": "Вийти",
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "actions": "Дії",
+    "status": "Статус"
+  },
+  "layout": {
+    "title": "ANPR Адмін",
+    "subtitle": "Керування воротами",
+    "dashboard": "Дашборд",
+    "vehicles": "Авто",
+    "logs": "Логи",
+    "manualTrigger": "Ручний тригер",
+    "gateOpened": "Ворота відкрито",
+    "triggerFailed": "Помилка реле",
+    "systemOnline": "Система онлайн",
+    "systemOffline": "Система офлайн"
+  },
+  "login": {
+    "title": "Вхід адміністратора",
+    "username": "Логін",
+    "password": "Пароль",
+    "signIn": "Увійти",
+    "signingIn": "Вхід...",
+    "failed": "Помилка входу"
+  },
+  "dashboard": {
+    "title": "Дашборд",
+    "totalVehicles": "Всього авто",
+    "todayAccesses": "Проїздів сьогодні",
+    "todayDenied": "Відмов сьогодні",
+    "failed": "Не вдалося завантажити статистику"
+  },
+  "vehicles": {
+    "title": "Авто",
+    "plate": "Номер",
+    "owner": "Власник",
+    "ownerInfo": "Інфо власника",
+    "add": "Додати авто",
+    "editTitle": "Редагувати авто",
+    "addTitle": "Додати авто",
+    "plateLabel": "Номерний знак",
+    "failedLoad": "Не вдалося завантажити авто",
+    "failedSave": "Не вдалося зберегти авто",
+    "failedDelete": "Не вдалося видалити авто",
+    "confirmDelete": "Видалити це авто?",
+    "plateValidation": "Номер має містити 3-12 символів A-Z або цифр",
+    "emptyOwner": "-",
+    "allowed": "дозволено",
+    "blocked": "заблоковано"
+  },
+  "logs": {
+    "title": "Логи доступу",
+    "downloadCsv": "Завантажити CSV",
+    "applyFilters": "Застосувати фільтри",
+    "plate": "Номер",
+    "time": "Час",
+    "photo": "Фото",
+    "view": "Переглянути",
+    "prev": "Назад",
+    "next": "Вперед",
+    "allowed": "дозволено",
+    "denied": "відмовлено",
+    "failed": "Не вдалося завантажити логи",
+    "showing": "Показано {from}-{to} з {total}"
+  },
+  "imageModal": {
+    "close": "Закрити",
+    "alt": "Знімок доступу",
+    "closeLabel": "Закрити вікно зображення"
+  }
+}

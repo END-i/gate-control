@@ -1,0 +1,77 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "logout": "Logout",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "actions": "Actions",
+    "status": "Status"
+  },
+  "layout": {
+    "title": "ANPR Admin",
+    "subtitle": "Gate Control",
+    "dashboard": "Dashboard",
+    "vehicles": "Vehicles",
+    "logs": "Logs",
+    "manualTrigger": "Manual Trigger",
+    "gateOpened": "Gate opened",
+    "triggerFailed": "Relay trigger failed",
+    "systemOnline": "System online",
+    "systemOffline": "System offline"
+  },
+  "login": {
+    "title": "Admin Login",
+    "username": "Username",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "failed": "Login failed"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalVehicles": "Total Vehicles",
+    "todayAccesses": "Today's Accesses",
+    "todayDenied": "Today's Denied",
+    "failed": "Failed to load stats"
+  },
+  "vehicles": {
+    "title": "Vehicles",
+    "plate": "Plate",
+    "owner": "Owner",
+    "ownerInfo": "Owner Info",
+    "add": "Add Vehicle",
+    "editTitle": "Edit Vehicle",
+    "addTitle": "Add Vehicle",
+    "plateLabel": "License Plate",
+    "failedLoad": "Failed to load vehicles",
+    "failedSave": "Failed to save vehicle",
+    "failedDelete": "Failed to delete vehicle",
+    "confirmDelete": "Delete this vehicle?",
+    "plateValidation": "License plate must be 3-12 uppercase letters or digits",
+    "emptyOwner": "-",
+    "allowed": "allowed",
+    "blocked": "blocked"
+  },
+  "logs": {
+    "title": "Access Logs",
+    "downloadCsv": "Download CSV",
+    "applyFilters": "Apply Filters",
+    "plate": "Plate",
+    "time": "Time",
+    "photo": "Photo",
+    "view": "View",
+    "prev": "Prev",
+    "next": "Next",
+    "allowed": "allowed",
+    "denied": "denied",
+    "failed": "Failed to load logs",
+    "showing": "Showing {from}-{to} of {total}"
+  },
+  "imageModal": {
+    "close": "Close",
+    "alt": "Access snapshot",
+    "closeLabel": "Close image modal"
+  }
+}

@@ -1,0 +1,6 @@
+ignoredBuiltDependencies:
+  - es5-ext
+
+onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - esbuild

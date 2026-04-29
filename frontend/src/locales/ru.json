@@ -1,0 +1,77 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "logout": "Выйти",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "actions": "Действия",
+    "status": "Статус"
+  },
+  "layout": {
+    "title": "ANPR Админ",
+    "subtitle": "Контроль ворот",
+    "dashboard": "Панель",
+    "vehicles": "Автомобили",
+    "logs": "Логи",
+    "manualTrigger": "Ручной триггер",
+    "gateOpened": "Ворота открыты",
+    "triggerFailed": "Ошибка реле",
+    "systemOnline": "Система онлайн",
+    "systemOffline": "Система офлайн"
+  },
+  "login": {
+    "title": "Вход администратора",
+    "username": "Имя пользователя",
+    "password": "Пароль",
+    "signIn": "Войти",
+    "signingIn": "Вход...",
+    "failed": "Ошибка входа"
+  },
+  "dashboard": {
+    "title": "Панель",
+    "totalVehicles": "Всего авто",
+    "todayAccesses": "Проходов сегодня",
+    "todayDenied": "Отказов сегодня",
+    "failed": "Не удалось загрузить статистику"
+  },
+  "vehicles": {
+    "title": "Автомобили",
+    "plate": "Номер",
+    "owner": "Владелец",
+    "ownerInfo": "Инфо владельца",
+    "add": "Добавить авто",
+    "editTitle": "Редактировать авто",
+    "addTitle": "Добавить авто",
+    "plateLabel": "Номерной знак",
+    "failedLoad": "Не удалось загрузить авто",
+    "failedSave": "Не удалось сохранить авто",
+    "failedDelete": "Не удалось удалить авто",
+    "confirmDelete": "Удалить это авто?",
+    "plateValidation": "Номер должен содержать 3-12 символов A-Z или цифр",
+    "emptyOwner": "-",
+    "allowed": "разрешен",
+    "blocked": "запрещен"
+  },
+  "logs": {
+    "title": "Логи доступа",
+    "downloadCsv": "Скачать CSV",
+    "applyFilters": "Применить фильтры",
+    "plate": "Номер",
+    "time": "Время",
+    "photo": "Фото",
+    "view": "Открыть",
+    "prev": "Назад",
+    "next": "Вперед",
+    "allowed": "разрешен",
+    "denied": "отказ",
+    "failed": "Не удалось загрузить логи",
+    "showing": "Показано {from}-{to} из {total}"
+  },
+  "imageModal": {
+    "close": "Закрыть",
+    "alt": "Снимок доступа",
+    "closeLabel": "Закрыть окно изображения"
+  }
+}
