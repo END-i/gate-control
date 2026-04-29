@@ -152,8 +152,9 @@ jobs:
 
           set +e
           docker run --network host --name "${CONTAINER_NAME}" \
-            ghcr.io/zaproxy/zaproxy:stable-baseline \
-            zap-baseline.py -t http://127.0.0.1:3000 -r /tmp/zap-report.html
+            --entrypoint /bin/bash \
+            ghcr.io/zaproxy/zaproxy:stable \
+            -lc "zap-baseline.py -t http://127.0.0.1:3000 -r /tmp/zap-report.html"
           ZAP_EXIT=$?
           set -e
 
@@ -165,7 +166,7 @@ jobs:
 
       - name: Upload ZAP report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: zap-report
           path: ${{ runner.temp }}/zap-out/zap-report.html
