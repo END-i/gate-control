@@ -43,7 +43,7 @@
 
   onMount(async () => {
     await loadLogs();
-    connectSSE();
+    await connectSSE();
   });
 
   onDestroy(() => {
@@ -143,13 +143,19 @@
     URL.revokeObjectURL(url);
   }
 
-  function connectSSE(): void {
+  async function connectSSE(): Promise<void> {
     const token = get(authToken);
-    if (!token) {
+    if (!token) return;
+
+    let sseToken: string;
+    try {
+      const data = await api.post<{ sse_token: string }>('/logs/stream-token');
+      sseToken = data.sse_token;
+    } catch {
       return;
     }
 
-    const streamUrl = `${apiBaseUrl}/logs/stream?access_token=${encodeURIComponent(token)}`;
+    const streamUrl = `${apiBaseUrl}/logs/stream?access_token=${encodeURIComponent(sseToken)}`;
     eventSource = new EventSource(streamUrl);
 
     eventSource.onmessage = (event) => {
