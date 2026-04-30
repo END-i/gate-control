@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import ENUM as PgENUM
 
 revision = "0001_initial_schema"
 down_revision = None
@@ -16,11 +17,14 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # create_type=False: we manage CREATE TYPE ourselves via .create() below;
-    # prevents op.create_table from issuing a second CREATE TYPE and raising
-    # DuplicateObjectError on asyncpg when the type already exists.
-    vehicle_status = sa.Enum("allowed", "blocked", name="vehicle_status", create_type=False)
-    vehicle_status.create(op.get_bind(), checkfirst=True)
+    # Explicit type creation with checkfirst=True (PgENUM so create_type is stored).
+    # A separate PgENUM(create_type=False) is used for the column so that
+    # op.create_table's before_create event skips re-creation via
+    # _check_for_name_in_memos (which returns True when create_type=False).
+    PgENUM("allowed", "blocked", name="vehicle_status").create(
+        op.get_bind(), checkfirst=True
+    )
+    vehicle_status = PgENUM("allowed", "blocked", name="vehicle_status", create_type=False)
 
     op.create_table(
         "admins",
@@ -71,4 +75,4 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_admins_id"), table_name="admins")
     op.drop_table("admins")
 
-    sa.Enum(name="vehicle_status", create_type=False).drop(op.get_bind(), checkfirst=True)
+    PgENUM(name="vehicle_status", create_type=False).drop(op.get_bind(), checkfirst=True)

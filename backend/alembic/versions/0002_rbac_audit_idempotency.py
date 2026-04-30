@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import ENUM as PgENUM
 
 revision = "0002_rbac_audit_idempotency"
 down_revision = "0001_initial_schema"
@@ -16,8 +17,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    admin_role = sa.Enum("admin", "operator", "viewer", name="admin_role", create_type=False)
-    admin_role.create(op.get_bind(), checkfirst=True)
+    PgENUM("admin", "operator", "viewer", name="admin_role").create(
+        op.get_bind(), checkfirst=True
+    )
+    admin_role = PgENUM("admin", "operator", "viewer", name="admin_role", create_type=False)
 
     op.add_column(
         "admins",
@@ -70,4 +73,4 @@ def downgrade() -> None:
     op.drop_table("security_audits")
 
     op.drop_column("admins", "role")
-    sa.Enum(name="admin_role", create_type=False).drop(op.get_bind(), checkfirst=True)
+    PgENUM(name="admin_role", create_type=False).drop(op.get_bind(), checkfirst=True)

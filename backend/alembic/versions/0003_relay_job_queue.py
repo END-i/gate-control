@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import ENUM as PgENUM
 
 revision = "0003_relay_job_queue"
 down_revision = "0002_rbac_audit_idempotency"
@@ -16,8 +17,13 @@ depends_on = None
 
 
 def upgrade() -> None:
-    relay_job_status = sa.Enum("pending", "processing", "succeeded", "dead_letter", name="relay_job_status", create_type=False)
-    relay_job_status.create(op.get_bind(), checkfirst=True)
+    PgENUM("pending", "processing", "succeeded", "dead_letter", name="relay_job_status").create(
+        op.get_bind(), checkfirst=True
+    )
+    relay_job_status = PgENUM(
+        "pending", "processing", "succeeded", "dead_letter",
+        name="relay_job_status", create_type=False
+    )
 
     op.create_table(
         "relay_jobs",
@@ -52,4 +58,4 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_relay_jobs_id"), table_name="relay_jobs")
     op.drop_table("relay_jobs")
 
-    sa.Enum(name="relay_job_status", create_type=False).drop(op.get_bind(), checkfirst=True)
+    PgENUM(name="relay_job_status", create_type=False).drop(op.get_bind(), checkfirst=True)
