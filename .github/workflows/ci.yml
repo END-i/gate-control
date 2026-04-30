@@ -156,15 +156,18 @@ jobs:
           fi
 
           set +e
+          # Use :stable (not :weekly) — supports zap-baseline.py directly without
+          # overriding the entrypoint.  Mount /zap/wrk so the script can write
+          # file-based outputs; the report lands on the host via the bind-mount,
+          # so no docker cp is needed.
           docker run --name "${CONTAINER_NAME}" \
             --network "container:${FRONTEND_CONTAINER_ID}" \
-            --entrypoint /bin/bash \
-            ghcr.io/zaproxy/zaproxy:weekly \
-            -lc "/zap/zap-baseline.py -I -t http://127.0.0.1:3000 -r /tmp/zap-report.html"
+            -v "${ZAP_OUT_DIR}:/zap/wrk" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -I -t http://127.0.0.1:3000 -r zap-report.html
           ZAP_EXIT=$?
           set -e
 
-          docker cp "${CONTAINER_NAME}:/tmp/zap-report.html" "${ZAP_OUT_DIR}/zap-report.html" || true
           docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 
           if [[ ! -f "${ZAP_OUT_DIR}/zap-report.html" ]]; then
