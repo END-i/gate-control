@@ -123,8 +123,9 @@ async def handle_anpr_webhook(
     if not event_key:
         event_key = hashlib.sha256(raw_body).hexdigest()
 
-    plate_number = form.get("plate_number")
-    image = form.get("image")
+    # Accept both snake_case (simulator/legacy) and camelCase (Dahua ITC cameras)
+    plate_number = form.get("plate_number") or form.get("plateNumber")
+    image = form.get("image") or form.get("plateImage")
 
     is_upload = isinstance(image, UploadFile) or (hasattr(image, "filename") and hasattr(image, "read"))
     if not isinstance(plate_number, str) or not is_upload:

@@ -38,7 +38,7 @@ test('dashboard system status indicator shows online', async ({ page }) => {
   await page.goto('/');
 
   // The green dot + "online" text from SystemStatusIndicator.
-  const indicator = page.locator('.rounded.border.border-gray-300');
+  const indicator = page.locator('[data-testid="system-status"]');
   await expect(indicator).toBeVisible();
   await expect(indicator.locator('.bg-green-500')).toBeVisible();
 });
@@ -53,7 +53,7 @@ test('dashboard system status indicator shows offline when API fails', async ({ 
   await page.evaluate(() => localStorage.setItem('anpr_access_token', 'fake-token'));
   await page.goto('/');
 
-  const indicator = page.locator('.rounded.border.border-gray-300');
+  const indicator = page.locator('[data-testid="system-status"]');
   await expect(indicator).toBeVisible();
   await expect(indicator.locator('.bg-red-500')).toBeVisible();
 });

@@ -39,7 +39,11 @@ async def login(
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    token = create_access_token(subject=admin.username, extra_claims={"role": admin.role.value})
+    token = create_access_token(
+        subject=admin.username,
+        extra_claims={"role": admin.role.value},
+        expires_minutes=settings.access_token_expire_minutes,
+    )
     await create_security_audit_event(
         db,
         event_type="login",

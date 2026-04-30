@@ -23,11 +23,11 @@ services:
       APP_ENV: ${APP_ENV:-development}
       AUTO_CREATE_SCHEMA: ${AUTO_CREATE_SCHEMA:-true}
       BACKEND_HOST: 0.0.0.0
-      BACKEND_PORT: ${BACKEND_PORT:-8000}
+      BACKEND_PORT: ${BACKEND_PORT:-8010}
     depends_on:
       - postgres
     ports:
-      - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
+      - "${BACKEND_PORT:-8010}:${BACKEND_PORT:-8010}"
     volumes:
       - media_data:/app/media
 

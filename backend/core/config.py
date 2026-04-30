@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     relay_worker_poll_seconds: int = Field(default=1, alias="RELAY_WORKER_POLL_SECONDS")
     relay_worker_retry_seconds: int = Field(default=5, alias="RELAY_WORKER_RETRY_SECONDS")
     relay_worker_max_attempts: int = Field(default=3, alias="RELAY_WORKER_MAX_ATTEMPTS")
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    access_token_expire_minutes: int = Field(default=60, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     redis_url: str = Field(default="", alias="REDIS_URL")
     metrics_api_key: str = Field(default="", alias="METRICS_API_KEY")
     trusted_proxy_ips: str = Field(default="", alias="TRUSTED_PROXY_IPS")

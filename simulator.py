@@ -10,6 +10,8 @@ import requests
 WEBHOOK_URL = os.getenv("WEBHOOK_URL", "http://localhost:8000/api/webhook/anpr")
 WEBHOOK_TOKEN = os.getenv("WEBHOOK_TOKEN", "change-me")
 INTERVAL_SECONDS = int(os.getenv("SIM_INTERVAL_SECONDS", "10"))
+# Set SIM_DAHUA_MODE=1 to mimic Dahua ITC413 field names (plateNumber, plateImage)
+DAHUA_MODE = os.getenv("SIM_DAHUA_MODE", "0") == "1"
 
 
 def random_plate() -> str:
@@ -25,13 +27,16 @@ def fake_image_bytes() -> bytes:
 
 
 def main() -> None:
-    print(f"Simulator started. Sending webhook to {WEBHOOK_URL} every {INTERVAL_SECONDS}s")
+    mode_label = "Dahua ITC413 mode" if DAHUA_MODE else "legacy mode"
+    print(f"Simulator started ({mode_label}). Sending webhook to {WEBHOOK_URL} every {INTERVAL_SECONDS}s")
     while True:
         plate = random_plate()
-        files = {
-            "image": (f"{plate}.jpg", fake_image_bytes(), "image/jpeg"),
-        }
-        data = {"plate_number": plate}
+        if DAHUA_MODE:
+            files = {"plateImage": (f"{plate}.jpg", fake_image_bytes(), "image/jpeg")}
+            data = {"plateNumber": plate}
+        else:
+            files = {"image": (f"{plate}.jpg", fake_image_bytes(), "image/jpeg")}
+            data = {"plate_number": plate}
         headers = {"X-Webhook-Token": WEBHOOK_TOKEN}
 
         try:

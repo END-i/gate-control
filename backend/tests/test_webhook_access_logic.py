@@ -53,3 +53,28 @@ def test_webhook_denies_blocked_vehicle_and_does_not_trigger_relay(client, monke
     payload = webhook_response.json()
     assert payload['status'] == 'denied'
     assert payload['relay_triggered'] is False
+
+
+def test_webhook_accepts_dahua_camelcase_field_names(client, monkeypatch):
+    """Dahua ITC413-PW4D-IZ1 sends plateNumber and plateImage instead of plate_number and image."""
+    monkeypatch.setenv('WEBHOOK_AUTH_MODE', 'token')
+
+    headers = _auth_headers(client)
+    create_vehicle = client.post(
+        '/api/vehicles',
+        json={'license_plate': 'ITC413AA', 'status': 'allowed'},
+        headers=headers,
+    )
+    assert create_vehicle.status_code == 201
+
+    webhook_response = client.post(
+        '/api/webhook/anpr',
+        data={'plateNumber': 'ITC413AA'},
+        files={'plateImage': ('plate.jpg', b'data', 'image/jpeg')},
+        headers={'X-Webhook-Token': 'webhook-secret', 'X-Event-Id': 'evt-dahua-1'},
+    )
+
+    assert webhook_response.status_code == 200
+    payload = webhook_response.json()
+    assert payload['status'] == 'opened'
+    assert payload['plate'] == 'ITC413AA'

@@ -37,17 +37,28 @@ This runbook describes first-response steps for critical ANPR platform incidents
 
 ### 2. Webhook ingestion degraded
 
-1. Verify webhook auth mode and secrets.
-2. Send a synthetic webhook test event.
-3. Check logs for signature/token failures and payload validation errors.
-4. If systemic, switch traffic to fallback/manual access protocol.
+1. Verify webhook auth mode and secrets (`WEBHOOK_AUTH_MODE`, `WEBHOOK_SHARED_SECRET`, `WEBHOOK_HMAC_SECRET`).
+2. Check camera ITSAPI notification target URL is pointing to the correct backend endpoint.
+3. Send a synthetic webhook test event via `simulator.py` or `scripts/smoke-critical-flow.sh`.
+4. Check logs for signature/token failures and payload validation errors.
+5. If camera is sending events but backend rejects: verify field names (`plateNumber`/`plate_number`) and auth headers.
+6. If systemic, switch traffic to fallback/manual access protocol.
 
 ### 3. Relay trigger failures
 
-1. Inspect relay endpoint reachability.
-2. Verify relay credentials and timeout behavior.
+1. Inspect relay endpoint reachability (`RELAY_IP`).
+2. Verify relay credentials (`RELAY_USERNAME`, `RELAY_PASSWORD`) and timeout behavior.
 3. Confirm decision path still records access logs even when relay fails.
-4. Escalate to hardware/network operator if external dependency is down.
+4. If using camera DO relay: verify physical wiring of relay output to barrier controller.
+5. Escalate to hardware/network operator if external dependency is down.
+
+### 4. Camera hardware outage (Dahua ITC413-PW4D-IZ1)
+
+1. Confirm no ITSAPI events received for >10 min (alert: `No webhook events for >= 10 minutes`).
+2. Check camera power (PoE 802.3at or 12 V DC) and network link (RJ-45).
+3. Access camera web UI to verify ITSAPI notification target is configured correctly.
+4. Camera on-board MicroSD may store snapshots locally during outage — review for audit if needed.
+5. Escalate to hardware operator for physical inspection if reachable but non-functional.
 
 ### 4. Database incident
 

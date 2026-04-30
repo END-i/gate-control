@@ -46,7 +46,7 @@
 
 	function logout(): void {
 		clearAuthToken();
-		goto('/login');
+		window.location.href = '/login';
 	}
 </script>
 

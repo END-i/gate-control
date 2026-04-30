@@ -5,8 +5,8 @@ const API = 'http://localhost:8099/api';
 const STATUS_OK = { online: true, last_webhook_timestamp: null, checked_at: new Date().toISOString() };
 
 const VEHICLES = [
-  { id: 1, plate: 'ABC123', status: 'allowed', owner_info: 'Alice', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
-  { id: 2, plate: 'XYZ999', status: 'denied', owner_info: 'Bob', created_at: '2024-01-02T00:00:00Z', updated_at: '2024-01-02T00:00:00Z' },
+  { id: 1, license_plate: 'ABC123', status: 'allowed', owner_info: 'Alice', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
+  { id: 2, license_plate: 'XYZ999', status: 'denied', owner_info: 'Bob', created_at: '2024-01-02T00:00:00Z', updated_at: '2024-01-02T00:00:00Z' },
 ];
 
 async function setupAuth(page: Parameters<typeof test>[1] extends { page: infer P } ? P : never) {
@@ -47,7 +47,7 @@ test('add vehicle modal: valid plate creates vehicle', async ({ page }) => {
   await page.route(`${API}/vehicles`, async (route) => {
     if (route.request().method() === 'POST') {
       const body = JSON.parse(route.request().postData() ?? '{}');
-      const newVehicle = { id: 99, plate: body.plate, status: body.status, owner_info: body.owner_info ?? '', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      const newVehicle = { id: 99, license_plate: body.license_plate, status: body.status, owner_info: body.owner_info ?? '', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
       vehiclesList.push(newVehicle);
       await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(newVehicle) });
     } else {

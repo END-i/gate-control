@@ -220,6 +220,30 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 ### Phase 10: Post-MVP Security Hardening
 36. **Prompt 34 (Webhook HMAC Hardening):** "Upgrade webhook authentication from static token to HMAC signature verification. Require headers `X-Webhook-Timestamp` and `X-Webhook-Signature`, compute HMAC-SHA256 over `timestamp + raw_body` using a shared secret, reject stale timestamps (e.g., older than 300 seconds), and use constant-time signature comparison. Keep backward compatibility behind a feature flag (`WEBHOOK_AUTH_MODE=token|hmac`) for gradual rollout. Add unit tests for valid signature, invalid signature, and replay/stale timestamp cases."
 
+### Phase 11: Subscription / Time-Limited Access
+
+> **Design rationale:** Records are never deleted on expiry — audit history is preserved. Instead, `valid_until` is a nullable UTC datetime on `Vehicle`. A `null` value means permanent access (fully backward-compatible). The expiry worker periodically transitions expired-but-still-`allowed` vehicles to `blocked` and emits a security audit event. This is simpler than a separate `Subscription` model and avoids status enum proliferation.
+
+37. **Prompt 35 (Subscription DB Migration):** "Add two nullable UTC datetime columns to the `vehicles` table: `valid_from` (datetime, nullable, default NULL) and `valid_until` (datetime, nullable, default NULL, indexed). Generate an Alembic migration. Existing rows must receive NULL for both columns. Update the `Vehicle` SQLAlchemy model and the `VehicleCreate`/`VehicleUpdate`/`VehicleOut` Pydantic schemas to include these fields (both optional, ISO-8601 format with `Z`)."
+
+38. **Prompt 36 (Subscription Access Check):** "Update `crud/vehicle.py` — `get_vehicle_by_plate()` access check: a vehicle grants access only when `status == 'allowed'` AND (`valid_until IS NULL` OR `valid_until > UTC now`). Add an async CRUD helper `get_expiring_soon(db, within_days: int)` that returns vehicles where `valid_until` is between now and now+N days and status is still `allowed`. Add unit tests: active subscription grants access; expired subscription (valid_until in the past) denies access; null valid_until vehicle is unaffected."
+
+39. **Prompt 37 (Subscription Expiry Worker):** "Add an async background task `subscription_expiry_worker` (similar in structure to the existing relay worker) that runs on a configurable interval (`SUBSCRIPTION_EXPIRY_CHECK_INTERVAL_SECONDS`, default 3600). The task queries vehicles where `valid_until < UTC now` and `status == 'allowed'`, sets their status to `blocked`, and emits a `security_audit` event `subscription_expired` with `plate_number` and `valid_until` in details. The task must be idempotent and safe to run concurrently. Register it in `main.py` startup. Add unit tests for single expiry, batch expiry, and no-op when no vehicles are due."
+
+40. **Prompt 38 (Subscription UI & Stats):** "(a) Backend: extend `GET /api/stats` response to include `active_subscriptions` (vehicles with non-null `valid_until >= now` and `status=allowed`) and `expiring_soon_count` (vehicles with `valid_until` within 7 days). Add optional query param `subscription` to `GET /api/vehicles` accepting values `all` (default) | `active` | `expiring_soon` | `expired` | `permanent`. (b) Frontend: update the Vehicle form modal — add optional `valid_from` date input and `valid_until` date input (date picker, UTC). In the vehicles table add a `Valid Until` column showing a badge: green (active), amber (≤7 days), red (expired), grey (permanent). Add two new stat widgets to the Dashboard for `active_subscriptions` and `expiring_soon_count`. Add i18n keys for all new strings in all four locale files."
+
+### Phase 12: Real-Time Monitoring & Observability
+
+> **Design rationale:** The camera sends `direction` (approach/leave) in the ITSAPI payload, enabling a live occupancy counter without separate hardware. Grafana re-uses the already-deployed `/metrics` Prometheus endpoint. RTSP streaming is optional and requires an external media proxy — kept separate to avoid bloating the core stack.
+
+41. **Prompt 39 (Occupancy Counter):** "Add a new in-memory counter `OccupancyTracker` in `backend/core/occupancy.py` with two operations: `enter()` and `leave()`, both thread-safe (asyncio.Lock). Expose `GET /api/occupancy` returning `{\"current\": int, \"updated_at\": ISO-8601}`. Update `handle_anpr_webhook` in `backend/api/webhook.py` to call `enter()` when `direction` field equals `approach` (or its camera aliases) and `leave()` when `direction` equals `leave`; ignore if field is absent (backward-compatible). Persist the counter across restarts using a single-row `occupancy` table in PostgreSQL (upsert on startup load + write-through on change). Add a `/api/occupancy/stream` SSE endpoint that pushes the current count whenever it changes. Add unit tests for enter/leave logic, counter floor at 0, and missing direction field."
+
+42. **Prompt 40 (Live Event Ticker):** "Add a `GET /api/events/live` SSE endpoint that replays the last 20 `AccessLog` entries on connect and then pushes each new entry as a JSON event as it is created (re-use the existing in-process SSE broadcast mechanism). Create a `LiveTicker.svelte` component that connects to this stream and renders a scrolling list of events: plate number, direction badge (→ / ←), access decision chip (green/red), thumbnail (if image_path available), and elapsed time. Mount the component in the Dashboard sidebar column. Add i18n keys for all new strings. Add a Vitest unit test that verifies the component renders an initial list and prepends new events."
+
+43. **Prompt 41 (Grafana Compose Profile):** "Add a `grafana` Docker Compose profile to `docker-compose.yml` activated via `--profile monitoring`. Include two services: `prometheus` (scrapes `/metrics` on backend) and `grafana` (pre-provisioned datasource + dashboard JSON). The dashboard must include panels for: webhook events/min, allowed vs. denied ratio, relay success ratio, webhook p95 latency, current occupancy, and queue depth. Store provisioning configs under `docker/grafana/`. Do not affect the default compose profile. Document activation in `README.md`."
+
+44. **Prompt 42 (Camera RTSP Proxy — optional):** "Add an optional `mediamtx` (formerly rtsp-simple-server) service to docker-compose under `--profile streaming`. Configure it to re-stream the camera RTSP feed (`rtsp://CAMERA_IP/cam/realmonitor`) as HLS at `/hls/camera.m3u8`. Add a `CameraFeed.svelte` component using an `<video>` HLS.js player embedded in the Dashboard. Add `CAMERA_RTSP_URL` to `.env.example` with a safe default of `disabled`. The component must gracefully hide itself when the URL is not configured."
+
 ---
 
 ## Plan Execution Status (2026-04-29)
@@ -303,6 +327,31 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - Chaos/fault-injection tests (e.g. Toxiproxy)
 - Encrypted block storage with retention classes
 - Staging environment auto-deploy pipeline
+- ~~**[TODO — camera] Plate field name normalization:** Dahua ITC413 sends `plateNumber` (camelCase); add field alias or normalization layer in `backend/api/webhook.py` to accept both `plate_number` and `plateNumber`~~ ✅ `form.get("plate_number") or form.get("plateNumber")` + `SIM_DAHUA_MODE` in `simulator.py` (2026-04-30)
+- **[TODO — camera] Webhook auth mode `basic`:** Dahua HTTP event notifications use Basic Auth, not `X-Webhook-Token`; add `WEBHOOK_AUTH_MODE=basic` support or document camera-side custom header configuration
+- ~~**[TODO — camera] Image field name:** confirm whether camera firmware sends `image` or `plateImage`; update webhook to accept both or align with confirmed field name~~ ✅ `form.get("image") or form.get("plateImage")` — webhook now accepts both (2026-04-30)
+- **[TODO — camera] Relay strategy:** evaluate replacing external `trigger_relay()` HTTP POST with Dahua CGI command (`/cgi-bin/accessControl.cgi`) using the camera's built-in Digital Output; document decision and implement if chosen
+- **[TODO — camera] Additional metadata fields:** Dahua payload may include `channelName`, `dateTime`, `country`, `plateColor`, `vehicleColor`, `direction`; decide whether to store or log these for audit purposes
+- **[TODO — subscriptions] Prompt 35:** DB migration — add `valid_from` / `valid_until` nullable columns to `vehicles`, update model + schemas
+- **[TODO — subscriptions] Prompt 36:** Access check — deny if `valid_until` is in the past; add `get_expiring_soon()` CRUD helper + unit tests
+- **[TODO — subscriptions] Prompt 37:** Expiry worker — background task marks expired vehicles as `blocked`, emits audit event `subscription_expired`
+- **[TODO — subscriptions] Prompt 38:** Frontend + Stats — vehicle form date pickers, table expiry badge, dashboard widgets, i18n keys
+- **[TODO — monitoring] Prompt 39:** Occupancy counter — `direction` field → enter/leave, `/api/occupancy` REST + SSE, PostgreSQL persistence, unit tests
+- **[TODO — monitoring] Prompt 40:** Live event ticker — `/api/events/live` SSE, `LiveTicker.svelte` component on Dashboard with plate/direction/decision/thumbnail, i18n, Vitest test
+- **[TODO — monitoring] Prompt 41:** Grafana compose profile — Prometheus + Grafana with pre-provisioned dashboard (webhook rate, occupancy, relay ratio, latency, queue depth)
+- **[TODO — monitoring] Prompt 42 (optional):** RTSP proxy — `mediamtx` compose service + `CameraFeed.svelte` HLS player, `--profile streaming`, graceful disable when `CAMERA_RTSP_URL` not set
+- **[TODO — audit] Audit log viewer:** таблиця `security_audit_events` існує в БД, але відсутня сторінка в UI для перегляду адміністратором; додати `/admin/audit` з фільтрами за датою, типом події, plate
+- **[TODO — reporting] Reports / Звіти:** PDF або Excel звіт за місяць — кількість в'їздів per vehicle, погодинна статистика, топ-10 активних номерів; зараз є тільки CSV логів
+- **[TODO — reliability] Webhook retry metrics:** ITC413 повторює надсилання при помилці; ідемпотентність через `X-Event-Id` є, але відсутня метрика retry-count та алерт при аномальному зростанні повторів
+- **[TODO — reliability] Graceful shutdown:** при зупинці контейнера `relay_worker` і `cleanup_task` можуть перерватися на середині; додати SIGTERM handler з drain (завершити поточне завдання, відмовити нові)
+- **[TODO — observability] DB connection pool monitoring:** відсутня метрика активних з'єднань SQLAlchemy; додати `pool_size`, `checked_out`, `overflow` до Prometheus endpoint
+
+### Future features (low priority — implement on demand only)
+
+- **[future] Notifications:** SMS / email / Telegram при відхиленні невідомого номера, за 7 днів до закінчення абонементу, при відключенні камери
+- **[future] Multi-camera / multi-site:** прив'язка `camera_id` / `location` до подій; зараз система монолітна (1 камера + 1 relay), `channelName` з ITSAPI вже надходить і може слугувати ідентифікатором
+- **[future] Bulk import/export vehicles:** CSV import для завантаження сотень номерів одразу; критично для великих паркінгів
+- **[future] Telegram bot / mobile interface:** швидкий доступ оператора без браузера — підтвердити, відхилити, відкрити шлагбаум вручну
 
 ---
 
@@ -454,6 +503,10 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 3. Tighten security job policy for actionable high/critical findings
 4. Integrate runbook/SLO checks into operational review cadence and alert routing
 5. Expand E2E suite to full happy-path and deny-path with relay side-effect verification
+6. **[camera] Resolve Dahua ITC413-PW4D-IZ1 field mapping and auth mode** (see Hardware Integration section)
+7. **[camera] Confirm image field name and relay strategy against real firmware**
+8. **[subscriptions] Implement Phase 11 (Prompts 35–38): time-limited access / subscription passes** — start with DB migration (Prompt 35)
+9. **[monitoring] Implement Phase 12 (Prompts 39–42): real-time monitoring** — start with occupancy counter (Prompt 39), highest ROI items: Prompt 39 + 40 + 41
 
 ## Product Readiness Exit Criteria
 
@@ -462,4 +515,97 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 3. CI quality gates and security checks stable and green
 4. System load profile meets target throughput and latency
 5. On-call/operator can complete incident runbook steps without developer intervention
-```
+
+---
+
+## Hardware Integration: Dahua ITC413-PW4D-IZ1
+
+### Camera specifications
+
+| Parameter | Value |
+|-----------|-------|
+| **Model** | Dahua ITC413-PW4D-IZ1 |
+| **Sensor** | 1/1.8" CMOS, 4 MP (2688×1520) |
+| **Lens** | Motorized varifocal 2.7–12 mm, F1.4, auto DC iris |
+| **Field of view** | H: 92°–46.1° / V: 49°–26° |
+| **IR illumination** | 850 nm, 4 sources; 10 m (plate recognition), 30 m (surveillance) |
+| **Detection speed** | up to 80 km/h |
+| **Sensitivity** | 0.001 lux (color), 0.0002 lux (B/W), 0 lux (IR) |
+| **WDR** | 140 dB |
+| **Encoding** | H.265+/H.264+/H.265/H.264/MJPEG |
+| **RAM / ROM** | 1 GB / 4 GB |
+| **Storage** | MicroSD up to 256 GB |
+| **Network** | RJ-45 10/100/1000 Mbps |
+| **Power** | 12 V DC 2 A or PoE 802.3at (≤20 W) |
+| **Protection** | IP67, IK10 |
+| **Operating temp** | −30°C to +65°C |
+| **Dimensions** | 396 × 120.8 × 127.8 mm, 2.3 kg |
+| **Certifications** | CE-EMC, CE-LVD, CE-RED, FCC |
+
+#### I/O interfaces
+
+| Interface | Details |
+|-----------|---------|
+| **Alarm inputs** | 2 (opto-isolated, 5 V threshold) |
+| **Alarm outputs (relay DO)** | 2 relays — 30 V DC / 0.5 A, 50 V AC / 500 mA |
+| **RS-485** | 2 (half-duplex, pass-through, DHRS, data output) |
+| **Wiegand** | 1 (SHA-1, 26-bit) |
+| **Audio in/out** | Built-in mic (3 m, 48 kHz), 2 W speaker, 1× RCA out |
+| **Remote control** | 433 / 868 MHz, range 15 m (line-of-sight) |
+
+#### ANPR intelligence
+
+| Feature | Value |
+|---------|-------|
+| **Plate recognition rate** | ≥96% (front/rear); ≥98% (EU plates) |
+| **Vehicle detection rate** | ≥99% (recommended installation conditions) |
+| **Vehicle types** | 9 (sedan, SUV, bus, heavy/medium/light truck, van, minivan, pickup) |
+| **Vehicle colors** | 12 |
+| **Brand logos** | 147 |
+| **Plate regions** | EU, CIS/Ukraine/Russia, Arabic, Latin America, North America + optional Asia/Africa |
+| **Whitelist / Blacklist** | 110 000 entries each (on-camera) |
+| **Protocols** | ONVIF (S, G, T), CGI, **ITSAPI**, P2P, HTTP/HTTPS, FTP, SMTP, SNMP |
+| **SDK / API** | Yes (Dahua SDK + CGI HTTP API) |
+
+#### Key integration notes for this project
+
+- **On-camera whitelist/blacklist (110k entries each):** camera can make access decisions autonomously; this project centralises all decisions in the FastAPI backend instead — camera acts as a pure sensor.
+- **ITSAPI** is the primary protocol for ANPR event delivery over HTTP; the camera pushes `multipart/form-data` notifications to a configured URL.
+- **Relay DO outputs (2×):** direct hardware relay to barrier/gate. Can be triggered by: (a) on-camera logic, (b) CGI command `POST /cgi-bin/accessControl.cgi` from backend, or (c) remote-control receiver (433/868 MHz).
+- **RS-485 / Wiegand:** alternative paths for access controller integration (not used in this project currently).
+- **MicroSD on-board:** camera can store snapshots and video locally as fallback if network to backend is lost.
+
+### Integration gap analysis (2026-04-30)
+
+| # | Area | Current implementation | Camera behavior | Action required |
+|---|------|----------------------|-----------------|-----------------|
+| 1 | Plate field name | `plate_number` (snake_case) | `plateNumber` (camelCase via ITSAPI) | ✅ Done — `form.get("plate_number") or form.get("plateNumber")` |
+| 2 | Image field name | `image` | `plateImage` (ITSAPI standard) | ✅ Done — `form.get("image") or form.get("plateImage")` |
+| 3 | Webhook auth | `X-Webhook-Token` header | HTTP Basic Auth (ITSAPI) or Digest Auth | Pending — add `WEBHOOK_AUTH_MODE=basic` or configure custom header on camera |
+| 4 | Relay trigger | External HTTP POST to `RELAY_IP` | Built-in DO relay (hardware) or Dahua CGI API | Pending — evaluate `POST /cgi-bin/accessControl.cgi` vs. separate relay endpoint |
+| 5 | Extra metadata | Ignored | `channelName`, `dateTime`, `country`, `plateColor`, `vehicleColor`, `direction` | Decide: log only or store for audit |
+
+### Additional metadata fields sent by camera (ITSAPI payload)
+
+Dahua ITC cameras send the following fields in the `multipart/form-data` ITSAPI notification alongside the plate number and image:
+
+- `plateNumber` — recognised plate string
+- `plateImage` — JPEG snapshot of the plate crop
+- `channelName` — camera channel label
+- `dateTime` — camera-local timestamp (ISO-8601)
+- `country` — plate country/region code
+- `plateColor` — plate background colour
+- `vehicleColor` — vehicle body colour
+- `vehicleType` — vehicle type category
+- `vehicleBrand` — recognised brand/logo
+- `direction` — travel direction (approach/leave)
+- `speed` — detected speed (km/h, if speed detection enabled)
+
+These are currently ignored by the webhook — store or log if needed for audit purposes.
+
+### Implementation order
+
+1. ✅ Resolve field name mapping (`plateNumber`, `plateImage`) — done
+2. Resolve auth mode (ITSAPI Basic Auth vs. custom header)
+3. Relay strategy decision (hardware DO direct-wire vs. CGI API command)
+4. Decision on extra metadata fields (log-only vs. store in DB)
