@@ -17,7 +17,7 @@ Set ``TRUSTED_PROXY_IPS`` to a comma-separated list of reverse-proxy IPs
 """
 from __future__ import annotations
 
-import random
+import secrets
 import time
 from collections import defaultdict, deque
 from threading import Lock
@@ -107,7 +107,7 @@ async def _enforce_redis(
     window_seconds: int,
 ) -> None:
     now = time.time()
-    member = f"{now:.6f}:{random.getrandbits(32)}"
+    member = f"{now:.6f}:{secrets.randbits(32)}"
     try:
         allowed = await redis.eval(
             _LUA_SLIDING_WINDOW,
