@@ -153,9 +153,7 @@ jobs:
 
           if [[ -z "${FRONTEND_CONTAINER_ID}" ]]; then
             echo "::warning::Frontend container ID not found; writing placeholder DAST report"
-            cat > "${ZAP_OUT_DIR}/zap-report.html" <<'EOF'
-            <html><body><h1>ZAP report unavailable</h1><p>Frontend container was not found.</p></body></html>
-            EOF
+            printf '%s\n' '<html><body><h1>ZAP report unavailable</h1><p>Frontend container was not found.</p></body></html>' > "${ZAP_OUT_DIR}/zap-report.html"
             exit 0
           fi
 
@@ -173,9 +171,7 @@ jobs:
 
           if [[ ! -f "${ZAP_OUT_DIR}/zap-report.html" ]]; then
             echo "::warning::ZAP report was not produced; writing placeholder report"
-            cat > "${ZAP_OUT_DIR}/zap-report.html" <<'EOF'
-            <html><body><h1>ZAP report unavailable</h1><p>Scan did not produce a report file.</p></body></html>
-            EOF
+            printf '%s\n' '<html><body><h1>ZAP report unavailable</h1><p>Scan did not produce a report file.</p></body></html>' > "${ZAP_OUT_DIR}/zap-report.html"
           fi
 
           if [[ "${ZAP_EXIT}" -ne 0 ]]; then
