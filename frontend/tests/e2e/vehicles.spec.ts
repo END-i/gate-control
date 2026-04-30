@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const API = 'http://localhost:8099/api';
 
@@ -9,7 +9,7 @@ const VEHICLES = [
   { id: 2, license_plate: 'XYZ999', status: 'denied', owner_info: 'Bob', created_at: '2024-01-02T00:00:00Z', updated_at: '2024-01-02T00:00:00Z' },
 ];
 
-async function setupAuth(page: Parameters<typeof test>[1] extends { page: infer P } ? P : never) {
+async function setupAuth(page: Page) {
   await page.route(`${API}/system/status`, (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(STATUS_OK) })
   );
@@ -58,7 +58,7 @@ test('add vehicle modal: valid plate creates vehicle', async ({ page }) => {
   await page.goto('/vehicles');
 
   // Open create modal.
-  await page.click('button.rounded.bg-black');
+  await page.getByRole('button', { name: /add vehicle/i }).click();
 
   // Fill form.
   await page.fill('input[placeholder]', 'NEW001');
@@ -84,7 +84,7 @@ test('add vehicle modal: invalid plate shows validation error', async ({ page })
   );
 
   await page.goto('/vehicles');
-  await page.click('button.rounded.bg-black');
+  await page.getByRole('button', { name: /add vehicle/i }).click();
 
   // "ab" is too short and lowercase — should fail regex.
   await page.fill('input[placeholder]', 'ab');
@@ -118,6 +118,9 @@ test('delete vehicle removes row from list', async ({ page }) => {
 
   await page.goto('/vehicles');
   await expect(page.getByText('ABC123')).toBeVisible();
+
+  // Accept the confirm() dialog that the delete handler shows.
+  page.on('dialog', (dialog) => dialog.accept());
 
   // Click the delete button in the ABC123 row.
   const row = page.locator('tr', { hasText: 'ABC123' });

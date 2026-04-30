@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const API = 'http://localhost:8099/api';
 
 const STATUS_OK = { online: true, last_webhook_timestamp: null, checked_at: new Date().toISOString() };
 
-async function injectToken(page: Parameters<typeof test>[1] extends { page: infer P } ? P : never) {
+async function injectToken(page: Page) {
   await page.addInitScript(() => {
     localStorage.setItem('anpr_access_token', 'fake-token');
   });

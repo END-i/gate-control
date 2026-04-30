@@ -46,7 +46,7 @@
 
 	function logout(): void {
 		clearAuthToken();
-		window.location.href = '/login';
+		// authToken subscriber in this layout handles goto('/login') when token is cleared
 	}
 </script>
 
