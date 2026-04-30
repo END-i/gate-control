@@ -44,9 +44,9 @@
 		}
 	}
 
-	function logout(): void {
+	async function logout(): Promise<void> {
 		clearAuthToken();
-		// authToken subscriber in this layout handles goto('/login') when token is cleared
+		await goto('/login');
 	}
 </script>
 

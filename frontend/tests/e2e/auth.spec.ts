@@ -72,7 +72,6 @@ test('unauthenticated access to / redirects to login', async ({ page }) => {
 });
 
 test('logout → redirects to login', async ({ page }) => {
-  await injectToken(page);
   await page.route(`${API}/system/status`, (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(STATUS_OK) })
   );
@@ -84,6 +83,9 @@ test('logout → redirects to login', async ({ page }) => {
     })
   );
 
+  // Use page.evaluate (not addInitScript) so the token is not re-injected on subsequent navigations.
+  await page.goto('/login');
+  await page.evaluate(() => localStorage.setItem('anpr_access_token', 'fake-token'));
   await page.goto('/');
 
   // Click logout button.

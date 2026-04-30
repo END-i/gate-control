@@ -58,7 +58,7 @@ test('add vehicle modal: valid plate creates vehicle', async ({ page }) => {
   await page.goto('/vehicles');
 
   // Open create modal.
-  await page.getByRole('button', { name: /add vehicle/i }).click();
+  await page.locator('[data-testid="open-create-vehicle"]').click();
 
   // Fill form.
   await page.fill('input[placeholder]', 'NEW001');
@@ -84,7 +84,7 @@ test('add vehicle modal: invalid plate shows validation error', async ({ page })
   );
 
   await page.goto('/vehicles');
-  await page.getByRole('button', { name: /add vehicle/i }).click();
+  await page.locator('[data-testid="open-create-vehicle"]').click();
 
   // "ab" is too short and lowercase — should fail regex.
   await page.fill('input[placeholder]', 'ab');

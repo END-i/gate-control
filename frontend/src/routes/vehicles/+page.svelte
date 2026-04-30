@@ -112,7 +112,7 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between">
     <h1 class="text-2xl font-bold">{$_('vehicles.title')}</h1>
-    <button class="rounded bg-black px-4 py-2 text-white" onclick={openCreateModal}>{$_('vehicles.add')}</button>
+    <button data-testid="open-create-vehicle" class="rounded bg-black px-4 py-2 text-white" onclick={openCreateModal}>{$_('vehicles.add')}</button>
   </div>
 
   {#if loading}
