@@ -13,9 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
 from core.database import get_db
-from core.hardware import trigger_relay
 from core.rate_limit import enforce_rate_limit
 from crud.access_log import create_access_log
+from crud.relay_job import create_relay_job
 from crud.security_audit import create_security_audit_event
 from crud.webhook_event import register_webhook_event
 from crud.vehicle import get_vehicle_by_plate
@@ -179,7 +179,14 @@ async def handle_anpr_webhook(
 
     relay_triggered = False
     if is_allowed:
-        relay_triggered = await trigger_relay()
+        await create_relay_job(
+            db,
+            event_type="webhook_allowed",
+            plate_number=clean_plate,
+            requested_by="anpr-webhook",
+            max_attempts=settings.relay_worker_max_attempts,
+        )
+        relay_triggered = True
 
     await create_security_audit_event(
         db,

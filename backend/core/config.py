@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     admin_role: str = Field(default="admin", alias="ADMIN_ROLE")
     sensitive_rate_limit: int = Field(default=60, alias="SENSITIVE_RATE_LIMIT")
     sensitive_rate_window_seconds: int = Field(default=60, alias="SENSITIVE_RATE_WINDOW_SECONDS")
+    relay_worker_poll_seconds: int = Field(default=1, alias="RELAY_WORKER_POLL_SECONDS")
+    relay_worker_retry_seconds: int = Field(default=5, alias="RELAY_WORKER_RETRY_SECONDS")
+    relay_worker_max_attempts: int = Field(default=3, alias="RELAY_WORKER_MAX_ATTEMPTS")
 
 
 @lru_cache

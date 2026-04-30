@@ -9,6 +9,7 @@ from models import vehicle as _vehicle_models  # noqa: F401
 from models import access_log as _access_log_models  # noqa: F401
 from models import security_audit as _security_audit_models  # noqa: F401
 from models import webhook_event as _webhook_event_models  # noqa: F401
+from models import relay_job as _relay_job_models  # noqa: F401
 
 settings = get_settings()
 engine = create_async_engine(settings.database_url, echo=False, future=True)

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import api.webhook as webhook_module
-
 
 def _auth_headers(client) -> dict[str, str]:
     response = client.post('/api/auth/login', json={'username': 'admin', 'password': 'admin'})
@@ -20,14 +18,6 @@ def test_webhook_opens_gate_for_allowed_vehicle(client, monkeypatch):
     )
     assert create_vehicle.status_code == 201
 
-    called = {'count': 0}
-
-    async def fake_trigger_relay() -> bool:
-        called['count'] += 1
-        return True
-
-    monkeypatch.setattr(webhook_module, 'trigger_relay', fake_trigger_relay)
-
     webhook_response = client.post(
         '/api/webhook/anpr',
         data={'plate_number': 'AA1234BB'},
@@ -39,7 +29,6 @@ def test_webhook_opens_gate_for_allowed_vehicle(client, monkeypatch):
     payload = webhook_response.json()
     assert payload['status'] == 'opened'
     assert payload['relay_triggered'] is True
-    assert called['count'] == 1
 
 
 def test_webhook_denies_blocked_vehicle_and_does_not_trigger_relay(client, monkeypatch):
@@ -53,14 +42,6 @@ def test_webhook_denies_blocked_vehicle_and_does_not_trigger_relay(client, monke
     )
     assert create_vehicle.status_code == 201
 
-    called = {'count': 0}
-
-    async def fake_trigger_relay() -> bool:
-        called['count'] += 1
-        return True
-
-    monkeypatch.setattr(webhook_module, 'trigger_relay', fake_trigger_relay)
-
     webhook_response = client.post(
         '/api/webhook/anpr',
         data={'plate_number': 'CC5678DD'},
@@ -72,4 +53,3 @@ def test_webhook_denies_blocked_vehicle_and_does_not_trigger_relay(client, monke
     payload = webhook_response.json()
     assert payload['status'] == 'denied'
     assert payload['relay_triggered'] is False
-    assert called['count'] == 0

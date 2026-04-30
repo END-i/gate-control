@@ -17,10 +17,12 @@ from core.cleanup import run_cleanup_service
 from core.config import get_settings
 from core.database import init_db
 from core.logging_config import configure_logging
+from core.relay_worker import run_relay_worker
 from core.seed import seed_initial_admin
 
 settings = get_settings()
 cleanup_task: Optional[asyncio.Task[None]] = None
+relay_worker_task: Optional[asyncio.Task[None]] = None
 MEDIA_DIR = Path(__file__).resolve().parent / "media"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 HTTP_REQUESTS_TOTAL = Counter(
@@ -69,7 +71,7 @@ def _localhost_origin_regex(frontend_url: str) -> Optional[str]:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    global cleanup_task
+    global cleanup_task, relay_worker_task
     configure_logging()
     _validate_runtime_secrets()
     logger.info("Starting ANPR backend")
@@ -78,9 +80,17 @@ async def lifespan(_: FastAPI):
         await init_db()
         await seed_initial_admin()
         cleanup_task = asyncio.create_task(run_cleanup_service(days=30, interval_hours=24))
+        relay_worker_task = asyncio.create_task(run_relay_worker())
     try:
         yield
     finally:
+        if relay_worker_task is not None:
+            relay_worker_task.cancel()
+            try:
+                await relay_worker_task
+            except asyncio.CancelledError:
+                pass
+            relay_worker_task = None
         if cleanup_task is not None:
             cleanup_task.cancel()
             try:

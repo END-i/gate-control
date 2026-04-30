@@ -275,6 +275,7 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - [x] Production runbook baseline added (`docs/runbook-production.md`)
 - [x] SLO/alerting baseline added (`docs/slo-alerting-baseline.md`)
 - [x] Critical flow smoke script added (`scripts/smoke-critical-flow.sh`) for allowed/blocked webhook decisions
+- [x] Relay queue/worker added with retry and dead-letter states (`relay_jobs` table + background worker)
 
 ### Contracts and change policy
 

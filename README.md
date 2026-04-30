@@ -164,6 +164,15 @@ Frontend coverage thresholds (Vitest):
 - Allowed webhook image content types: `image/jpeg`, `image/png`, `image/webp`.
 - Max image payload is controlled by `WEBHOOK_MAX_IMAGE_BYTES` (default `5242880`, 5 MB).
 
+## Relay Queue Processing
+
+- Webhook/manual trigger paths enqueue relay jobs into `relay_jobs`.
+- Background worker processes queue asynchronously with retry and dead-letter states.
+- Worker behavior is configurable with:
+	- `RELAY_WORKER_POLL_SECONDS`
+	- `RELAY_WORKER_RETRY_SECONDS`
+	- `RELAY_WORKER_MAX_ATTEMPTS`
+
 ## Documentation
 
 - Governance: `docs/GOVERNANCE.md`
