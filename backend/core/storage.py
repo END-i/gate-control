@@ -28,6 +28,8 @@ Usage::
 """
 from __future__ import annotations
 
+import os
+import shutil
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from pathlib import Path
@@ -75,6 +77,81 @@ class LocalStorage(MediaStorage):
 
     async def url(self, path: str) -> str:
         return f"/{path}"
+
+    def move_to_cold(
+        self,
+        hot_days: int | None = None,
+        cold_subdir: str = "cold",
+    ) -> int:
+        """Move files older than *hot_days* days into a ``cold/`` sub-tree.
+
+        Files are relocated from::
+
+            media/YYYY/MM/DD/<file>
+
+        to::
+
+            media/cold/YYYY/MM/DD/<file>
+
+        Returns the number of files moved.
+
+        Parameters
+        ----------
+        hot_days:
+            Files whose parent ``YYYY/MM/DD`` date is strictly older than this
+            are moved.  Defaults to ``MEDIA_RETENTION_HOT_DAYS`` setting.
+        cold_subdir:
+            Destination sub-directory name inside *media_root*.
+        """
+        from core.config import get_settings  # avoid circular import at load
+
+        if hot_days is None:
+            hot_days = get_settings().media_retention_hot_days
+
+        cutoff = datetime.now(timezone.utc).toordinal() - hot_days
+        moved = 0
+
+        # Walk YYYY/MM/DD directories directly under media_root
+        for year_dir in sorted(self._root.iterdir()):
+            if year_dir.name == cold_subdir or not year_dir.is_dir():
+                continue
+            for month_dir in sorted(year_dir.iterdir()):
+                if not month_dir.is_dir():
+                    continue
+                for day_dir in sorted(month_dir.iterdir()):
+                    if not day_dir.is_dir():
+                        continue
+                    try:
+                        dir_date = datetime(
+                            int(year_dir.name),
+                            int(month_dir.name),
+                            int(day_dir.name),
+                            tzinfo=timezone.utc,
+                        )
+                    except ValueError:
+                        continue
+                    if dir_date.toordinal() >= cutoff:
+                        continue  # still "hot"
+
+                    cold_day = (
+                        self._root
+                        / cold_subdir
+                        / year_dir.name
+                        / month_dir.name
+                        / day_dir.name
+                    )
+                    cold_day.mkdir(parents=True, exist_ok=True)
+                    for file_path in day_dir.iterdir():
+                        if file_path.is_file():
+                            shutil.move(str(file_path), str(cold_day / file_path.name))
+                            moved += 1
+                    # Remove now-empty day dir
+                    try:
+                        os.rmdir(day_dir)
+                    except OSError:
+                        pass  # not empty — leave it
+
+        return moved
 
 
 # ---------------------------------------------------------------------------

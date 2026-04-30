@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     vault_secret_path: str = Field(default="secret/data/anpr", alias="VAULT_SECRET_PATH")
     # Media storage
     media_storage_backend: Literal["local", "s3"] = Field(default="local", alias="MEDIA_STORAGE_BACKEND")
+    media_retention_hot_days: int = Field(default=30, alias="MEDIA_RETENTION_HOT_DAYS")
     s3_bucket: str = Field(default="", alias="S3_BUCKET")
     s3_endpoint_url: str = Field(default="", alias="S3_ENDPOINT_URL")
     aws_access_key_id: str = Field(default="", alias="AWS_ACCESS_KEY_ID")
