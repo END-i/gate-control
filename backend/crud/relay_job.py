@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import get_settings
 from models.relay_job import RelayJob, RelayJobStatus
 
 
@@ -27,8 +28,6 @@ async def create_relay_job(
     await db.refresh(item)
     return item
 
-
-from core.config import get_settings
 
 
 def _is_postgres() -> bool:
