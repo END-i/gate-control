@@ -1,0 +1,111 @@
+name: Nightly
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  schedule:
+    # 02:00 UTC daily
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  nightly-backup-validation:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: anpr
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt
+
+      - name: Apply Alembic migrations
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/anpr
+          SECRET_KEY: ci-secret
+          RELAY_IP: http://relay.local
+          RELAY_USERNAME: u
+          RELAY_PASSWORD: p
+          FRONTEND_URL: http://localhost:3000
+          WEBHOOK_SHARED_SECRET: ci-webhook-secret
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: admin
+        run: python -m alembic -c alembic.ini upgrade head
+
+      - name: Install postgresql-client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+
+      - name: Run backup validation
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: anpr
+          POSTGRES_HOST: localhost
+          PGPASSWORD: postgres
+        run: ./scripts/validate-backup.sh
+
+  nightly-migration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: anpr_migrate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements-dev.txt
+
+      - name: Run migration tests (up/down cycle)
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/anpr_migrate_test
+          SECRET_KEY: ci-secret
+          RELAY_IP: http://relay.local
+          RELAY_USERNAME: u
+          RELAY_PASSWORD: p
+          FRONTEND_URL: http://localhost:3000
+          WEBHOOK_SHARED_SECRET: ci-webhook-secret
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: admin
+          ANPR_SKIP_STARTUP_TASKS: "1"
+        run: python -m pytest tests/test_migrations.py -v

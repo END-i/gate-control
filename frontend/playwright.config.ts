@@ -18,6 +18,9 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
+    env: {
+      VITE_API_BASE_URL: 'http://localhost:8099/api',
+    },
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
