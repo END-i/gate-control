@@ -44,9 +44,9 @@
 		}
 	}
 
-	async function logout(): Promise<void> {
+	function logout(): void {
 		clearAuthToken();
-		await goto('/login');
+		window.location.href = '/login';
 	}
 </script>
 

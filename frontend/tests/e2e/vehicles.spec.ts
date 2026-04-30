@@ -61,7 +61,7 @@ test('add vehicle modal: valid plate creates vehicle', async ({ page }) => {
   await page.locator('[data-testid="open-create-vehicle"]').click();
 
   // Fill form.
-  await page.fill('input[placeholder]', 'NEW001');
+  await page.locator('[data-testid="plate-input"]').fill('NEW001');
 
   // Select status "allowed".
   await page.selectOption('select', 'allowed');
@@ -87,7 +87,7 @@ test('add vehicle modal: invalid plate shows validation error', async ({ page })
   await page.locator('[data-testid="open-create-vehicle"]').click();
 
   // "ab" is too short and lowercase — should fail regex.
-  await page.fill('input[placeholder]', 'ab');
+  await page.locator('[data-testid="plate-input"]').fill('ab');
   await page.click('button[type="submit"]');
 
   // Expect the form to show an error (not close modal, plate still invalid).

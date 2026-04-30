@@ -157,7 +157,7 @@
       <form class="space-y-3" onsubmit={submitVehicle}>
         <label class="block">
           <span class="mb-1 block text-sm">{$_('vehicles.plateLabel')}</span>
-          <input class="w-full rounded border border-gray-300 px-3 py-2" placeholder="ABC123" bind:value={formPlate} required />
+          <input data-testid="plate-input" class="w-full rounded border border-gray-300 px-3 py-2" placeholder="ABC123" bind:value={formPlate} required />
         </label>
 
         <label class="block">
