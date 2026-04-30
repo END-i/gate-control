@@ -161,6 +161,7 @@ jobs:
           # file-based outputs; the report lands on the host via the bind-mount,
           # so no docker cp is needed.
           docker run --name "${CONTAINER_NAME}" \
+            --user 0:0 \
             --network "container:${FRONTEND_CONTAINER_ID}" \
             -v "${ZAP_OUT_DIR}:/zap/wrk" \
             ghcr.io/zaproxy/zaproxy:stable \
