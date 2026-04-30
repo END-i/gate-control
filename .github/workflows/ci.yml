@@ -159,8 +159,8 @@ jobs:
           docker run --name "${CONTAINER_NAME}" \
             --network "container:${FRONTEND_CONTAINER_ID}" \
             --entrypoint /bin/bash \
-            ghcr.io/zaproxy/zaproxy:stable \
-            -lc "zap-baseline.py -I -t http://127.0.0.1:3000 -r /tmp/zap-report.html"
+            ghcr.io/zaproxy/zaproxy:weekly \
+            -lc "/zap/zap-baseline.py -I -t http://127.0.0.1:3000 -r /tmp/zap-report.html"
           ZAP_EXIT=$?
           set -e
 
