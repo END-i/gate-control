@@ -16,7 +16,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    vehicle_status = sa.Enum("allowed", "blocked", name="vehicle_status")
+    # create_type=False: we manage CREATE TYPE ourselves via .create() below;
+    # prevents op.create_table from issuing a second CREATE TYPE and raising
+    # DuplicateObjectError on asyncpg when the type already exists.
+    vehicle_status = sa.Enum("allowed", "blocked", name="vehicle_status", create_type=False)
     vehicle_status.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
@@ -68,4 +71,4 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_admins_id"), table_name="admins")
     op.drop_table("admins")
 
-    sa.Enum(name="vehicle_status").drop(op.get_bind(), checkfirst=True)
+    sa.Enum(name="vehicle_status", create_type=False).drop(op.get_bind(), checkfirst=True)

@@ -16,7 +16,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    relay_job_status = sa.Enum("pending", "processing", "succeeded", "dead_letter", name="relay_job_status")
+    relay_job_status = sa.Enum("pending", "processing", "succeeded", "dead_letter", name="relay_job_status", create_type=False)
     relay_job_status.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
@@ -52,4 +52,4 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_relay_jobs_id"), table_name="relay_jobs")
     op.drop_table("relay_jobs")
 
-    sa.Enum(name="relay_job_status").drop(op.get_bind(), checkfirst=True)
+    sa.Enum(name="relay_job_status", create_type=False).drop(op.get_bind(), checkfirst=True)

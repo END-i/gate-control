@@ -16,7 +16,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    admin_role = sa.Enum("admin", "operator", "viewer", name="admin_role")
+    admin_role = sa.Enum("admin", "operator", "viewer", name="admin_role", create_type=False)
     admin_role.create(op.get_bind(), checkfirst=True)
 
     op.add_column(
@@ -70,4 +70,4 @@ def downgrade() -> None:
     op.drop_table("security_audits")
 
     op.drop_column("admins", "role")
-    sa.Enum(name="admin_role").drop(op.get_bind(), checkfirst=True)
+    sa.Enum(name="admin_role", create_type=False).drop(op.get_bind(), checkfirst=True)
