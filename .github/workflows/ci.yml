@@ -122,7 +122,6 @@ jobs:
 
   dast-zap:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -152,9 +151,8 @@ jobs:
           docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 
           if [[ -z "${FRONTEND_CONTAINER_ID}" ]]; then
-            echo "::warning::Frontend container ID not found; writing placeholder DAST report"
-            printf '%s\n' '<html><body><h1>ZAP report unavailable</h1><p>Frontend container was not found.</p></body></html>' > "${ZAP_OUT_DIR}/zap-report.html"
-            exit 0
+            echo "Frontend container ID not found"
+            exit 1
           fi
 
           set +e
@@ -170,12 +168,13 @@ jobs:
           docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 
           if [[ ! -f "${ZAP_OUT_DIR}/zap-report.html" ]]; then
-            echo "::warning::ZAP report was not produced; writing placeholder report"
-            printf '%s\n' '<html><body><h1>ZAP report unavailable</h1><p>Scan did not produce a report file.</p></body></html>' > "${ZAP_OUT_DIR}/zap-report.html"
+            echo "ZAP report was not produced"
+            exit 1
           fi
 
           if [[ "${ZAP_EXIT}" -ne 0 ]]; then
-            echo "::warning::ZAP baseline exited with code ${ZAP_EXIT}; continuing because DAST is advisory"
+            echo "ZAP baseline exited with code ${ZAP_EXIT}"
+            exit "${ZAP_EXIT}"
           fi
 
       - name: Upload ZAP report

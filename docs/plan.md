@@ -270,6 +270,8 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - [x] CI security lanes: Bandit (SAST), pip-audit, pnpm audit, ZAP baseline (DAST, non-blocking)
 - [x] Observability baseline: Prometheus metrics endpoint (`/metrics`)
 - [x] Docker backend runtime env parametrization (`BACKEND_HOST`, `BACKEND_PORT`, compose wiring)
+- [x] Controlled DAST gate behavior: infrastructure/report generation failures now fail CI; alert severity remains policy-driven
+- [x] PostgreSQL backup/restore automation scripts for compose runtime (`scripts/backup-postgres.sh`, `scripts/restore-postgres.sh`)
 
 ### Contracts and change policy
 
@@ -439,7 +441,7 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 ## Next Sprint (Highest ROI)
 
 1. Implement queue/worker with retry policy and dead-letter queue
-2. Add backup/restore automation with nightly restore check
+2. Add nightly restore verification in CI/staging using existing backup/restore scripts
 3. Tighten security job policy for actionable high/critical findings
 4. Publish production runbook and SLO/alert dashboard baseline
 5. Expand E2E suite to full happy-path and deny-path with relay side-effect verification

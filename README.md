@@ -109,6 +109,34 @@ Run coverage only:
 ./scripts/coverage-all.sh
 ```
 
+## Backup and Restore (PostgreSQL)
+
+These scripts work with the running Docker Compose `postgres` service.
+
+Create backup:
+
+```bash
+./scripts/backup-postgres.sh
+```
+
+or
+
+```bash
+npm run backup:db
+```
+
+Restore from backup:
+
+```bash
+./scripts/restore-postgres.sh ./backups/postgres-anpr-YYYYMMDDTHHMMSSZ.dump
+```
+
+or
+
+```bash
+npm run restore:db -- ./backups/postgres-anpr-YYYYMMDDTHHMMSSZ.dump
+```
+
 Backend coverage gate is enforced by `BACKEND_COVERAGE_MIN` (default `70`).
 
 Frontend coverage thresholds (Vitest):
