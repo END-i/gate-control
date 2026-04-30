@@ -12,6 +12,15 @@ async def seed_initial_admin() -> None:
     if not settings.admin_username or not settings.admin_password:
         raise RuntimeError("ADMIN_USERNAME and ADMIN_PASSWORD must be set")
 
+    try:
+        role = AdminRole(settings.admin_role.lower())
+    except ValueError:
+        valid = ", ".join(r.value for r in AdminRole)
+        raise RuntimeError(
+            f"ADMIN_ROLE='{settings.admin_role}' is not a valid role. "
+            f"Expected one of: {valid}"
+        )
+
     async with SessionLocal() as db:
         existing = await db.execute(select(Admin.id).limit(1))
         first_admin_id = existing.scalar_one_or_none()
@@ -22,7 +31,7 @@ async def seed_initial_admin() -> None:
         admin = Admin(
             username=settings.admin_username,
             hashed_password=hash_password(settings.admin_password),
-            role=AdminRole(settings.admin_role.lower()),
+            role=role,
         )
         db.add(admin)
         await db.commit()

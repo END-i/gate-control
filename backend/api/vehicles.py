@@ -38,7 +38,7 @@ async def post_vehicle(
     _: Admin = Depends(require_roles(AdminRole.ADMIN, AdminRole.OPERATOR)),
 ) -> VehicleRead:
     settings = get_settings()
-    enforce_rate_limit(
+    await enforce_rate_limit(
         request,
         scope="vehicles_mutation",
         limit=settings.sensitive_rate_limit,
@@ -61,7 +61,7 @@ async def put_vehicle(
     _: Admin = Depends(require_roles(AdminRole.ADMIN, AdminRole.OPERATOR)),
 ) -> VehicleRead:
     settings = get_settings()
-    enforce_rate_limit(
+    await enforce_rate_limit(
         request,
         scope="vehicles_mutation",
         limit=settings.sensitive_rate_limit,
@@ -88,7 +88,7 @@ async def remove_vehicle(
     _: Admin = Depends(require_roles(AdminRole.ADMIN, AdminRole.OPERATOR)),
 ) -> None:
     settings = get_settings()
-    enforce_rate_limit(
+    await enforce_rate_limit(
         request,
         scope="vehicles_mutation",
         limit=settings.sensitive_rate_limit,

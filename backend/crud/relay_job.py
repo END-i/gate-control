@@ -28,15 +28,27 @@ async def create_relay_job(
     return item
 
 
+from core.config import get_settings
+
+
+def _is_postgres() -> bool:
+    return get_settings().database_url.startswith("postgresql")
+
+
 async def claim_next_relay_job(db: AsyncSession) -> RelayJob | None:
     now = datetime.now(timezone.utc)
-    result = await db.execute(
+    stmt = (
         select(RelayJob)
         .where(RelayJob.status == RelayJobStatus.PENDING)
         .where(RelayJob.available_at <= now)
         .order_by(RelayJob.id.asc())
         .limit(1)
     )
+    # Prevent two workers from claiming the same job concurrently (PostgreSQL only;
+    # SQLite used in tests doesn't support FOR UPDATE SKIP LOCKED).
+    if _is_postgres():
+        stmt = stmt.with_for_update(skip_locked=True)
+    result = await db.execute(stmt)
     item = result.scalar_one_or_none()
     if item is None:
         return None

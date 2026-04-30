@@ -19,7 +19,7 @@ async def manual_trigger(
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, object]:
     settings = get_settings()
-    enforce_rate_limit(
+    await enforce_rate_limit(
         request,
         scope="relay_trigger",
         limit=settings.sensitive_rate_limit,

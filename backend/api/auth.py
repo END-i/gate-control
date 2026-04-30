@@ -21,7 +21,7 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     settings = get_settings()
-    enforce_rate_limit(
+    await enforce_rate_limit(
         request,
         scope="auth_login",
         limit=settings.auth_login_rate_limit,

@@ -21,9 +21,21 @@ async def cleanup_old_data(days: int = 30) -> int:
     async with SessionLocal() as db:
         logs_to_remove = await _find_logs_before_cutoff(db, cutoff)
 
+        backend_root = Path(__file__).resolve().parents[1]
+        media_root_resolved = media_root.resolve()
         for item in logs_to_remove:
             if item.image_path:
-                file_path = Path(__file__).resolve().parents[1] / item.image_path
+                try:
+                    # image_path is stored relative to the backend root (e.g. "media/2024/…/uuid.jpg").
+                    file_path = (backend_root / item.image_path).resolve()
+                    # Guard against path-traversal: only delete files inside media_root.
+                    file_path.relative_to(media_root_resolved)
+                except ValueError:
+                    logger.warning(
+                        'Cleanup skipped image_path outside media root (possible path traversal): {}',
+                        item.image_path,
+                    )
+                    continue
                 try:
                     file_path.unlink(missing_ok=True)
                 except FileNotFoundError:

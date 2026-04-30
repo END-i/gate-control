@@ -16,7 +16,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    vehicle_status = sa.Enum("ALLOWED", "BLOCKED", name="vehicle_status")
+    vehicle_status = sa.Enum("allowed", "blocked", name="vehicle_status")
     vehicle_status.create(op.get_bind(), checkfirst=True)
 
     op.create_table(

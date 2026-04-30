@@ -120,7 +120,7 @@ async def handle_anpr_webhook(
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str | bool]:
     settings = get_settings()
-    enforce_rate_limit(
+    await enforce_rate_limit(
         request,
         scope="webhook_anpr",
         limit=settings.webhook_rate_limit,

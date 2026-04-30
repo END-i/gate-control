@@ -10,14 +10,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
 from core.database import get_db
-from core.dependencies import get_admin_from_token, require_roles
+from core.dependencies import get_admin_from_token, get_current_admin, require_roles
 from core.rate_limit import enforce_rate_limit
+from core.security import create_sse_token, decode_access_token
 from crud.logs import list_access_logs, list_access_logs_after_id
 from models.admin import Admin, AdminRole
 from models.access_log import AccessLog
 from schemas.log import AccessLogListResponse
 
 router = APIRouter(prefix="/logs", tags=["logs"])
+
+
+@router.post("/stream-token")
+async def get_stream_token(
+    current_admin: Admin = Depends(get_current_admin),
+) -> dict[str, object]:
+    """Issue a short-lived (60 s) token for SSE stream authentication.
+
+    The browser's ``EventSource`` API cannot send ``Authorization`` headers,
+    so we issue a dedicated single-purpose token that is safe to pass as a
+    URL query parameter (it expires before it can be replayed).
+    """
+    token = create_sse_token(current_admin.username)
+    return {"sse_token": token, "expires_in": 60}
 
 
 def _log_to_payload(log: AccessLog) -> dict[str, object]:
@@ -64,12 +79,29 @@ async def stream_logs(
     if not access_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing access token")
 
+    # Validate the short-lived SSE token (purpose=sse) issued by /stream-token.
+    # Ordinary long-lived Bearer tokens are intentionally rejected here to
+    # prevent long-lived credentials from appearing in server access logs.
+    credentials_error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired SSE token — call POST /api/logs/stream-token first",
+    )
+    try:
+        payload = decode_access_token(access_token)
+        if payload.get("purpose") != "sse":
+            raise credentials_error
+        username = payload.get("sub")
+    except Exception as exc:
+        raise credentials_error from exc
+
     admin = await get_admin_from_token(access_token, db)
+    if admin.username != username:
+        raise credentials_error
     if admin.role not in {AdminRole.ADMIN, AdminRole.OPERATOR, AdminRole.VIEWER}:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
 
     settings = get_settings()
-    enforce_rate_limit(
+    await enforce_rate_limit(
         request,
         scope="logs_stream",
         limit=settings.sensitive_rate_limit,

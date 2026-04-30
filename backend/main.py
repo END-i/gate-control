@@ -5,7 +5,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, Request
+import hmac
+
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -130,6 +132,14 @@ async def security_headers_middleware(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none';"
+    )
     return response
 
 
@@ -139,5 +149,13 @@ async def health() -> dict[str, str]:
 
 
 @app.get("/metrics")
-async def metrics() -> Response:
+async def metrics(
+    x_metrics_token: Optional[str] = Header(default=None, alias="X-Metrics-Token"),
+) -> Response:
+    api_key = settings.metrics_api_key
+    if api_key and (
+        x_metrics_token is None
+        or not hmac.compare_digest(x_metrics_token, api_key)
+    ):
+        raise HTTPException(status_code=401, detail="Unauthorized")
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)

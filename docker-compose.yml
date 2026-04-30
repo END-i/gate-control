@@ -3,9 +3,9 @@ services:
     image: postgres:15
     restart: unless-stopped
     environment:
-      POSTGRES_DB: anpr
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-anpr}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -18,7 +18,7 @@ services:
     env_file:
       - ${COMPOSE_ENV_FILE:-./.env}
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/anpr
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:-anpr}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       APP_ENV: ${APP_ENV:-development}
       AUTO_CREATE_SCHEMA: ${AUTO_CREATE_SCHEMA:-true}

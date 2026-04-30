@@ -30,3 +30,16 @@ def create_access_token(subject: str, expires_minutes: int = 60, extra_claims: O
 def decode_access_token(token: str) -> dict:
     settings = get_settings()
     return jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+
+
+def create_sse_token(subject: str) -> str:
+    """Issue a short-lived (60 s) token for SSE stream authentication.
+
+    The token carries ``purpose=sse`` so the stream endpoint can reject
+    ordinary long-lived access tokens passed in a URL query string.
+    """
+    return create_access_token(
+        subject=subject,
+        expires_minutes=1,
+        extra_claims={"purpose": "sse"},
+    )
