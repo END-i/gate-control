@@ -7,6 +7,7 @@
     "dev": "./scripts/run-dev.sh",
     "doctor": "./scripts/doctor.sh",
     "smoke": "./scripts/smoke-e2e.sh",
+    "smoke:critical": "./scripts/smoke-critical-flow.sh",
     "backup:db": "./scripts/backup-postgres.sh",
     "restore:db": "./scripts/restore-postgres.sh",
     "precommit": "./scripts/check-all.sh"

@@ -46,6 +46,7 @@ npm run frontend  # frontend only
 npm run dev       # backend + frontend
 npm run doctor    # health + CORS diagnostics
 npm run smoke     # login/status/stats/logs smoke flow
+npm run smoke:critical # allowed/blocked webhook decision flow
 ```
 
 Equivalent direct scripts:
@@ -172,6 +173,8 @@ Frontend coverage thresholds (Vitest):
 - Project structure reference: `docs/project-structure-reference.md`
 - Plan: `docs/plan.md`
 - Worklog: `docs/worklog.md`
+- Production runbook: `docs/runbook-production.md`
+- SLO/alerting baseline: `docs/slo-alerting-baseline.md`
 
 ## Database Migrations (Alembic)
 

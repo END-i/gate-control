@@ -272,6 +272,9 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - [x] Docker backend runtime env parametrization (`BACKEND_HOST`, `BACKEND_PORT`, compose wiring)
 - [x] Controlled DAST gate behavior: infrastructure/report generation failures now fail CI; alert severity remains policy-driven
 - [x] PostgreSQL backup/restore automation scripts for compose runtime (`scripts/backup-postgres.sh`, `scripts/restore-postgres.sh`)
+- [x] Production runbook baseline added (`docs/runbook-production.md`)
+- [x] SLO/alerting baseline added (`docs/slo-alerting-baseline.md`)
+- [x] Critical flow smoke script added (`scripts/smoke-critical-flow.sh`) for allowed/blocked webhook decisions
 
 ### Contracts and change policy
 
@@ -443,7 +446,7 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 1. Implement queue/worker with retry policy and dead-letter queue
 2. Add nightly restore verification in CI/staging using existing backup/restore scripts
 3. Tighten security job policy for actionable high/critical findings
-4. Publish production runbook and SLO/alert dashboard baseline
+4. Integrate runbook/SLO checks into operational review cadence and alert routing
 5. Expand E2E suite to full happy-path and deny-path with relay side-effect verification
 
 ## Product Readiness Exit Criteria
