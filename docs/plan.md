@@ -291,13 +291,18 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 
 ### Planned next slices (not yet implemented)
 
-1. Queue/worker isolation for heavy integrations (camera retries, relay retry queue)
-2. Automated backup/restore jobs for Postgres + periodic restore validation in staging
-3. Production profile hardening (strict CSP, mTLS/internal auth between services, secret manager)
-4. Advanced test families: contract/load/chaos/property/migration tests in CI matrix
-5. Media storage strategy options in production:
-  - object storage (S3-compatible) with lifecycle policies
-  - encrypted block storage with retention classes
+1. ~~Queue/worker isolation for heavy integrations (camera retries, relay retry queue)~~ ✅ relay_jobs + worker implemented in Expansion Wave
+2. ~~Automated backup/restore jobs for Postgres + periodic restore validation in staging~~ ✅ `scripts/validate-backup.sh` + `backup-validation` CI job (2026-04-30)
+3. ~~Production profile hardening (strict CSP, mTLS/internal auth between services, secret manager)~~ ✅ CSP tightened (`object-src 'none'`, `base-uri`, `form-action`), Vault adapter `core/secrets.py` (2026-04-30)
+4. ~~Advanced test families: contract/load/chaos/property/migration tests in CI matrix~~ ✅ `test_api_contract.py`, `test_migrations.py`, `test_property.py` (Hypothesis), `locustfile.py`, `migration-tests` + `load-test-smoke` + `backup-validation` CI jobs (2026-04-30)
+5. ~~Media storage strategy options in production~~ ✅ `core/storage.py` — LocalStorage / S3Storage abstraction, MinIO profile in docker-compose (2026-04-30)
+
+### Remaining / future work
+
+- mTLS between backend and internal services
+- Chaos/fault-injection tests (e.g. Toxiproxy)
+- Encrypted block storage with retention classes
+- Staging environment auto-deploy pipeline
 
 ---
 

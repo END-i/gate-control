@@ -5,3 +5,4 @@ pytest-cov==5.0.0
 ruff==0.6.9
 mypy==1.14.1
 eval_type_backport==0.2.2
+hypothesis==6.135.0

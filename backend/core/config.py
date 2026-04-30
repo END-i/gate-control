@@ -44,6 +44,16 @@ class Settings(BaseSettings):
     redis_url: str = Field(default="", alias="REDIS_URL")
     metrics_api_key: str = Field(default="", alias="METRICS_API_KEY")
     trusted_proxy_ips: str = Field(default="", alias="TRUSTED_PROXY_IPS")
+    vault_addr: str = Field(default="", alias="VAULT_ADDR")
+    vault_token: str = Field(default="", alias="VAULT_TOKEN")
+    vault_secret_path: str = Field(default="secret/data/anpr", alias="VAULT_SECRET_PATH")
+    # Media storage
+    media_storage_backend: Literal["local", "s3"] = Field(default="local", alias="MEDIA_STORAGE_BACKEND")
+    s3_bucket: str = Field(default="", alias="S3_BUCKET")
+    s3_endpoint_url: str = Field(default="", alias="S3_ENDPOINT_URL")
+    aws_access_key_id: str = Field(default="", alias="AWS_ACCESS_KEY_ID")
+    aws_secret_access_key: str = Field(default="", alias="AWS_SECRET_ACCESS_KEY")
+    s3_public_base_url: str = Field(default="", alias="S3_PUBLIC_BASE_URL")
 
 
 @lru_cache

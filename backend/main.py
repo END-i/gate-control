@@ -20,7 +20,13 @@ from core.config import get_settings
 from core.database import init_db
 from core.logging_config import configure_logging
 from core.relay_worker import run_relay_worker
+from core.secrets import prefetch_secrets
 from core.seed import seed_initial_admin
+
+# Prefetch secrets from Vault (no-op when VAULT_ADDR is not set) so that
+# pydantic-settings picks them up via os.environ before the first get_settings()
+# call.
+prefetch_secrets()
 
 settings = get_settings()
 cleanup_task: Optional[asyncio.Task[None]] = None
@@ -137,7 +143,11 @@ async def security_headers_middleware(request: Request, call_next):
         "script-src 'self'; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data:; "
+        "font-src 'self'; "
         "connect-src 'self'; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
         "frame-ancestors 'none';"
     )
     return response

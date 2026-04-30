@@ -4,9 +4,7 @@ import hmac
 import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
-from uuid import uuid4
 
-import aiofiles
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, UploadFile, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import get_settings
 from core.database import get_db
 from core.rate_limit import enforce_rate_limit
+from core.storage import get_storage
 from crud.access_log import create_access_log
 from crud.relay_job import create_relay_job
 from crud.security_audit import create_security_audit_event
@@ -24,7 +23,6 @@ from core.system_status import mark_webhook_received
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 
-MEDIA_ROOT = Path(__file__).resolve().parents[1] / "media"
 ALLOWED_IMAGE_CONTENT_TYPES = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
@@ -88,27 +86,18 @@ async def _save_image_async(image: UploadFile) -> str:
     if content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported image content type")
 
-    now = datetime.now(timezone.utc)
-    day_path = MEDIA_ROOT / now.strftime("%Y") / now.strftime("%m") / now.strftime("%d")
-    day_path.mkdir(parents=True, exist_ok=True)
-
-    original_suffix = Path(image.filename or "upload.bin").suffix.lower()
-    allowed_suffix = ALLOWED_IMAGE_CONTENT_TYPES[content_type]
-    suffix = original_suffix if original_suffix in ALLOWED_IMAGE_CONTENT_TYPES.values() else allowed_suffix
-    file_name = f"{uuid4().hex}{suffix}"
-    destination = day_path / file_name
-
     content = await image.read()
     if not content:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty image payload")
     if len(content) > settings.webhook_max_image_bytes:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image payload is too large")
 
-    async with aiofiles.open(destination, "wb") as output:
-        await output.write(content)
+    original_suffix = Path(image.filename or "upload.bin").suffix.lower()
+    allowed_suffix = ALLOWED_IMAGE_CONTENT_TYPES[content_type]
+    suffix = original_suffix if original_suffix in ALLOWED_IMAGE_CONTENT_TYPES.values() else allowed_suffix
 
-    relative_path = destination.relative_to(MEDIA_ROOT.parent)
-    return relative_path.as_posix()
+    storage = get_storage()
+    return await storage.save(content=content, suffix=suffix)
 
 
 @router.post("/anpr")
