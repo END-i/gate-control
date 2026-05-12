@@ -7,7 +7,7 @@ from io import BytesIO
 
 import requests
 
-WEBHOOK_URL = os.getenv("WEBHOOK_URL", "http://localhost:8000/api/webhook/anpr")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "http://localhost:8010/api/webhook/anpr")
 WEBHOOK_TOKEN = os.getenv("WEBHOOK_TOKEN", "change-me")
 INTERVAL_SECONDS = int(os.getenv("SIM_INTERVAL_SECONDS", "10"))
 # Set SIM_DAHUA_MODE=1 to mimic Dahua ITC413 field names (plateNumber, plateImage)

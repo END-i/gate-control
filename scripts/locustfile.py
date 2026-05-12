@@ -1,11 +1,11 @@
 """Locust load-test scenarios for the ANPR Gate Control API.
 
 Run against a live stack:
-    locust -f scripts/locustfile.py --host http://localhost:8000 \
+    locust -f scripts/locustfile.py --host http://localhost:8010 \
            --users 20 --spawn-rate 5 --run-time 60s --headless
 
 Or open the web UI:
-    locust -f scripts/locustfile.py --host http://localhost:8000
+    locust -f scripts/locustfile.py --host http://localhost:8010
 
 Scenarios
 ---------

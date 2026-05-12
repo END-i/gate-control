@@ -28,5 +28,5 @@ fi
 exec "$PYTHON_BIN" -m uvicorn main:app \
   --app-dir "$ROOT_DIR/backend" \
   --host "${BACKEND_HOST:-0.0.0.0}" \
-  --port "${BACKEND_PORT:-8000}" \
+  --port "${BACKEND_PORT:-8010}" \
   --reload
