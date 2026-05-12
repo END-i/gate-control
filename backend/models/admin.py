@@ -20,7 +20,7 @@ class Admin(Base):
     username: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[AdminRole] = mapped_column(
-        SAEnum(AdminRole, name="admin_role"),
+        SAEnum(AdminRole, name="admin_role", values_callable=lambda obj: [e.value for e in obj]),
         default=AdminRole.ADMIN,
         nullable=False,
     )

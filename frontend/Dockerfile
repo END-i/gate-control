@@ -1,12 +1,13 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 RUN corepack enable && pnpm install --frozen-lockfile
 
 FROM node:22-alpine AS build
 WORKDIR /app
 ARG VITE_API_BASE_URL=http://localhost:8010/api
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV CI=true
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN corepack enable && pnpm run build
