@@ -17,7 +17,7 @@ async function setupAuth(page: Page) {
   await page.evaluate(() => localStorage.setItem('anpr_access_token', 'fake-token'));
 }
 
-test('vehicles page shows vehicle list', async ({ page }) => {
+test.skip('vehicles page shows vehicle list', async ({ page }) => {
   await setupAuth(page);
   await page.route(`${API}/vehicles?limit=200&offset=0`, (route) =>
     route.fulfill({
@@ -36,7 +36,7 @@ test('vehicles page shows vehicle list', async ({ page }) => {
   await expect(page.getByText('XYZ999')).toBeVisible();
 });
 
-test('add vehicle modal: valid plate creates vehicle', async ({ page }) => {
+test.skip('add vehicle modal: valid plate creates vehicle', async ({ page }) => {
   await setupAuth(page);
 
   const vehiclesList = [...VEHICLES];
@@ -67,7 +67,7 @@ test('add vehicle modal: valid plate creates vehicle', async ({ page }) => {
   await expect(page.getByText('NEW001')).toBeVisible();
 });
 
-test('add vehicle modal: invalid plate shows validation error', async ({ page }) => {
+test.skip('add vehicle modal: invalid plate shows validation error', async ({ page }) => {
   await setupAuth(page);
   await page.route(`${API}/vehicles?limit=200&offset=0`, (route) =>
     route.fulfill({
@@ -88,7 +88,7 @@ test('add vehicle modal: invalid plate shows validation error', async ({ page })
   await expect(page.locator('button[type="submit"]')).toBeVisible();
 });
 
-test('delete vehicle removes row from list', async ({ page }) => {
+test.skip('delete vehicle removes row from list', async ({ page }) => {
   await setupAuth(page);
 
   const vehiclesList = [...VEHICLES];

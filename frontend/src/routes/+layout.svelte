@@ -46,7 +46,7 @@
 
 	function logout(): void {
 		clearAuthToken();
-		window.location.href = '/login';
+		goto('/login');
 	}
 </script>
 
@@ -87,6 +87,7 @@
 						type="button"
 						class="rounded border border-gray-300 px-4 py-2 text-sm font-semibold"
 						onclick={logout}
+						data-testid="logout-button"
 					>
 						{$_('common.logout')}
 					</button>

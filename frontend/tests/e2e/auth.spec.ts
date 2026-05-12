@@ -4,11 +4,6 @@ const API = 'http://localhost:8099/api';
 
 const STATUS_OK = { online: true, last_webhook_timestamp: null, checked_at: new Date().toISOString() };
 
-async function injectToken(page: Page) {
-  await page.addInitScript(() => {
-    localStorage.setItem('anpr_access_token', 'fake-token');
-  });
-}
 
 test('login page renders', async ({ page }) => {
   await page.goto('/login');
@@ -88,10 +83,13 @@ test('logout → redirects to login', async ({ page }) => {
   await page.evaluate(() => localStorage.setItem('anpr_access_token', 'fake-token'));
   await page.goto('/');
 
+  await page.waitForLoadState('networkidle');
+  
   // Click logout button.
-  const logoutBtn = page.getByRole('button', { name: /logout|вийти/i });
+  const logoutBtn = page.locator('[data-testid="logout-button"]');
   await expect(logoutBtn).toBeVisible();
   await logoutBtn.click();
+  
   await page.waitForURL('/login');
   await expect(page).toHaveURL('/login');
 });
