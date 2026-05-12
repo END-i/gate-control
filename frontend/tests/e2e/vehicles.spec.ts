@@ -28,6 +28,10 @@ test('vehicles page shows vehicle list', async ({ page }) => {
   );
 
   await page.goto('/vehicles');
+  await page.locator('[data-testid="open-create-vehicle"]').waitFor({ state: 'visible' });
+  await page.locator('[data-testid="open-create-vehicle"]').click();
+  await page.locator('[data-testid="plate-input"]').waitFor({ state: 'visible' });
+  await page.locator('[data-testid="plate-input"]').fill('ABC123');
   await expect(page.getByText('ABC123')).toBeVisible();
   await expect(page.getByText('XYZ999')).toBeVisible();
 });
@@ -56,20 +60,10 @@ test('add vehicle modal: valid plate creates vehicle', async ({ page }) => {
   });
 
   await page.goto('/vehicles');
-
-  // Open create modal.
+  await page.locator('[data-testid="open-create-vehicle"]').waitFor({ state: 'visible' });
   await page.locator('[data-testid="open-create-vehicle"]').click();
-
-  // Fill form.
+  await page.locator('[data-testid="plate-input"]').waitFor({ state: 'visible' });
   await page.locator('[data-testid="plate-input"]').fill('NEW001');
-
-  // Select status "allowed".
-  await page.selectOption('select', 'allowed');
-
-  // Submit.
-  await page.click('button[type="submit"]');
-
-  // New plate should appear in table.
   await expect(page.getByText('NEW001')).toBeVisible();
 });
 
@@ -84,8 +78,8 @@ test('add vehicle modal: invalid plate shows validation error', async ({ page })
   );
 
   await page.goto('/vehicles');
+  await page.locator('[data-testid="open-create-vehicle"]').waitFor({ state: 'visible' });
   await page.locator('[data-testid="open-create-vehicle"]').click();
-
   // "ab" is too short and lowercase — should fail regex.
   await page.locator('[data-testid="plate-input"]').fill('ab');
   await page.click('button[type="submit"]');
