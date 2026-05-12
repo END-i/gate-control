@@ -16,6 +16,7 @@ Always strictly use the following stack for any code generation:
 * **Backend:** Python 3.11, FastAPI, SQLAlchemy 2.0 (Async), PostgreSQL.
 * **Frontend:** SvelteKit (Node.js Adapter), Tailwind CSS, svelte-i18n.
 * **Infrastructure:** Docker, Docker Compose.
+> **Windows/Edge deployment exception (Karsun target):** When generating code for the Karsun JS-LPRO1 / Windows deployment target (Phase 13, Prompts 43–50), substitute SQLite (`aiosqlite`) for PostgreSQL and PyInstaller + Windows Task Scheduler for Docker Compose. All other rules remain unchanged.
 9. **API Contract Consistency:** If a frontend step depends on a backend endpoint, that endpoint must be explicitly introduced in an earlier backend prompt before frontend implementation.
 10. **Security by Default:** Any external callback endpoint (camera webhook, relay trigger) must include an authentication/verification mechanism and explicit failure handling.
 
@@ -244,6 +245,28 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 
 44. **Prompt 42 (Camera RTSP Proxy — optional):** "Add an optional `mediamtx` (formerly rtsp-simple-server) service to docker-compose under `--profile streaming`. Configure it to re-stream the camera RTSP feed (`rtsp://CAMERA_IP/cam/realmonitor`) as HLS at `/hls/camera.m3u8`. Add a `CameraFeed.svelte` component using an `<video>` HLS.js player embedded in the Dashboard. Add `CAMERA_RTSP_URL` to `.env.example` with a safe default of `disabled`. The component must gracefully hide itself when the URL is not configured."
 
+### Phase 13: Karsun Edge Computing Migration
+
+> **Context (2026-05-11):** New business requirements introduce the **Karsun JS-LPRO1** camera with built-in Edge Computing. The camera handles access decisions autonomously via its internal whitelist/blacklist; the server role shifts to sync-master and statistics collector. Deployment target changes from Docker/Linux to PyInstaller `.exe` on Windows. See [Hardware Integration: Karsun JS-LPRO1](#hardware-integration-karsun-js-lpro1) for the full hardware gap analysis.
+
+> **Blocker:** Official Karsun JS-LPRO1 HTTP API documentation is required from the vendor before Prompts 44–46 can be implemented beyond stubs. All `karsun_api.py` HTTP calls must initially be stubs that log a warning and return `False`.
+
+45. **Prompt 43 (DB Migration: SQLite + Model Updates):** "Replace `asyncpg`/PostgreSQL with `aiosqlite`/SQLite in `core/database.py` (`DATABASE_URL` default: `sqlite+aiosqlite:///./anpr.db`). Update CORS to accept all LAN origins (`*`) for Windows/local-network deployment. Generate Alembic migration: extend `VehicleStatus` enum with `blacklist` value; add `action_type` column (enum: `auto_entry` | `manual_entry`, nullable, default `auto_entry`) and `admin_id` nullable integer foreign key to `AccessLog`. Update all affected SQLAlchemy models and Pydantic schemas. Existing rows receive NULL `admin_id` and `auto_entry` action_type."
+
+46. **Prompt 44 (Karsun API Client):** "Create `backend/core/karsun_api.py`. Load camera settings from config: `KARSUN_IP`, `KARSUN_USERNAME`, `KARSUN_PASSWORD`, `KARSUN_RELAY_PATH`, `KARSUN_WHITELIST_ADD_PATH`, `KARSUN_WHITELIST_REMOVE_PATH`. Implement three async functions using `httpx` with a 3-second timeout: (a) `sync_vehicle_to_camera(plate: str, status: VehicleStatus) -> bool` — adds plate to camera whitelist if `allowed`, removes if `denied` or `blacklist`; (b) `remove_vehicle_from_camera(plate: str) -> bool` — removes plate from camera internal memory; (c) `trigger_relay() -> bool` — sends HTTP command to camera relay endpoint for manual gate open. All functions catch all exceptions, log the error with `loguru`, and return `False` on failure — camera unavailability must never crash the server. Implement as stubs returning `False` with a `logger.warning` until official API spec is available."
+
+47. **Prompt 45 (Vehicle CRUD + Camera Sync):** "Update all Vehicle write endpoints in `api/vehicles.py`: after each successful POST, PUT, or DELETE in SQLite, call the corresponding `karsun_api.py` function asynchronously. Wrap each camera call in try/except. Extend the response schema with a `camera_sync: bool` field indicating whether the camera acknowledged the change. Never fail the HTTP response due to a camera error — the DB operation is the source of truth."
+
+48. **Prompt 46 (Webhook Refactor):** "Add endpoint `POST /api/webhook/camera` (keep `/api/webhook/anpr` as a deprecated alias). Update handler: remove relay trigger logic entirely — webhook is now statistics-only. Record `action_type='auto_entry'` and `admin_id=None` in `AccessLog`. Accept fields from Karsun payload (use Dahua aliases as fallback for compatibility; update field names once vendor documentation is received)."
+
+49. **Prompt 47 (Manual Open Endpoint):** "Add `/api/relay/manual_open` as canonical endpoint (keep `/api/relay/trigger` as alias). Call `karsun_api.trigger_relay()`. Save `AccessLog` entry with `action_type='manual_entry'` and `admin_id` from the authenticated admin. Return `{\"status\": \"opened\"}` on success or `{\"status\": \"error\", \"detail\": \"camera unreachable\"}` on failure."
+
+50. **Prompt 48 (Backup/Restore API):** "Create `api/backup.py` router. `GET /api/backup/export` returns a JSON array of all `Vehicle` records (protected, `admin`/`operator` roles). `POST /api/backup/import` accepts JSON array: clears the `Vehicle` table, inserts restored records, then calls `karsun_api.sync_vehicle_to_camera()` for each record to rebuild camera whitelist. Return `{\"restored\": N, \"camera_synced\": M}`. Protected by `get_current_admin`. Mount router in `main.py`."
+
+51. **Prompt 49 (Windows Deployment Scripts):** "Create `scripts/build-windows.bat`: runs `pyinstaller --onefile --name anpr-backend main.py` from the `backend/` directory to produce `dist/anpr-backend.exe`. Create `scripts/start.bat`: starts `dist\anpr-backend.exe` (port 8000) and `node build\index.js` (HOST=0.0.0.0, PORT=80) in separate `cmd /k start` windows. Create `docs/DEPLOYMENT.md` with step-by-step Windows Task Scheduler instructions: trigger = At startup; 'Run whether user is logged on or not'; 'Run with highest privileges'; action = path to `start.bat`. Include instructions for setting a static IP address on the Windows server."
+
+52. **Prompt 50 (Karsun Config + Docs):** "Add Karsun-specific settings to `core/config.py`: `KARSUN_IP`, `KARSUN_USERNAME`, `KARSUN_PASSWORD`, `KARSUN_RELAY_PATH` (default `/api/relay`), `KARSUN_WHITELIST_ADD_PATH` (default `/api/whitelist/add`), `KARSUN_WHITELIST_REMOVE_PATH` (default `/api/whitelist/remove`). Update `.env.example` with these variables and safe placeholder values with comments. Create `docs/CAMERA_SETUP.md` documenting: required Karsun JS-LPRO1 network settings (static IP, HTTP event push URL configuration), webhook payload field specification, and relay/whitelist API endpoint format — mark fields pending vendor confirmation."
+
 ---
 
 ## Plan Execution Status (2026-04-29)
@@ -328,6 +351,15 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - Encrypted block storage with retention classes
 - Staging environment auto-deploy pipeline
 - ~~**[TODO — camera] Plate field name normalization:** Dahua ITC413 sends `plateNumber` (camelCase); add field alias or normalization layer in `backend/api/webhook.py` to accept both `plate_number` and `plateNumber`~~ ✅ `form.get("plate_number") or form.get("plateNumber")` + `SIM_DAHUA_MODE` in `simulator.py` (2026-04-30)
+- **[TODO — karsun] Obtain Karsun JS-LPRO1 API documentation:** required before `karsun_api.py` can be implemented beyond stubs; contact vendor for HTTP API spec covering whitelist add/remove, relay command, and webhook payload field names — this is the critical blocker for Phase 13
+- **[TODO — karsun] Prompt 43 — SQLite migration:** replace `asyncpg`/PostgreSQL with `aiosqlite`/SQLite; extend `VehicleStatus` with `blacklist`; add `action_type` + `admin_id` to `AccessLog`; update CORS for LAN deployment
+- **[TODO — karsun] Prompt 44 — `karsun_api.py` stubs:** create `core/karsun_api.py` with `sync_vehicle_to_camera()`, `remove_vehicle_from_camera()`, `trigger_relay()` as stubs returning `False` + `logger.warning`
+- **[TODO — karsun] Prompt 45 — Vehicle CRUD sync:** call `karsun_api` after every POST/PUT/DELETE on vehicles; add `camera_sync: bool` to response schema
+- **[TODO — karsun] Prompt 46 — Webhook refactor:** add `/api/webhook/camera` alias; remove relay logic from handler; record `action_type='auto_entry'`
+- **[TODO — karsun] Prompt 47 — Manual open endpoint:** add `/api/relay/manual_open` with `action_type='manual_entry'` and `admin_id` logging; keep `/api/relay/trigger` as alias
+- **[TODO — karsun] Prompt 48 — Backup/Restore API:** `GET /api/backup/export` + `POST /api/backup/import` with post-import camera whitelist rebuild
+- **[TODO — karsun] Prompt 49 — Windows deployment:** `build-windows.bat`, `start.bat`, `docs/DEPLOYMENT.md` with Task Scheduler instructions
+- **[TODO — karsun] Prompt 50 — Karsun config + docs:** `KARSUN_IP` etc. in `config.py`, `.env.example`, `docs/CAMERA_SETUP.md`
 - **[TODO — camera] Webhook auth mode `basic`:** Dahua HTTP event notifications use Basic Auth, not `X-Webhook-Token`; add `WEBHOOK_AUTH_MODE=basic` support or document camera-side custom header configuration
 - ~~**[TODO — camera] Image field name:** confirm whether camera firmware sends `image` or `plateImage`; update webhook to accept both or align with confirmed field name~~ ✅ `form.get("image") or form.get("plateImage")` — webhook now accepts both (2026-04-30)
 - **[TODO — camera] Relay strategy:** evaluate replacing external `trigger_relay()` HTTP POST with Dahua CGI command (`/cgi-bin/accessControl.cgi`) using the camera's built-in Digital Output; document decision and implement if chosen
@@ -352,6 +384,53 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - **[future] Multi-camera / multi-site:** прив'язка `camera_id` / `location` до подій; зараз система монолітна (1 камера + 1 relay), `channelName` з ITSAPI вже надходить і може слугувати ідентифікатором
 - **[future] Bulk import/export vehicles:** CSV import для завантаження сотень номерів одразу; критично для великих паркінгів
 - **[future] Telegram bot / mobile interface:** швидкий доступ оператора без браузера — підтвердити, відхилити, відкрити шлагбаум вручну
+- **[future] Karsun live stream:** відеопотік з камери Karsun JS-LPRO1 у браузері — розширення Dashboard (Backlog Prompt 14 з нових вимог)
+
+---
+
+## Karsun Migration Wave (planned, 2026-05-12)
+
+### Context
+
+New business requirements (received 2026-05-11) pivot the hardware platform from **Dahua ITC413-PW4D-IZ1** to **Karsun JS-LPRO1** (Edge Computing) and the deployment target from Docker/Linux to PyInstaller `.exe` on Windows.
+
+### Architecture delta
+
+| Concern | Current (Dahua) | Target (Karsun) |
+|---------|----------------|-----------------|
+| Access decision | Backend (FastAPI queries DB) | Camera (checks internal whitelist autonomously) |
+| Relay trigger on entry | Backend calls `trigger_relay()` | Camera operates autonomously — no server involvement |
+| Webhook purpose | Decision + logging | Logging only (statistics/audit) |
+| DB → camera sync | Not required | Required on every CRUD operation |
+| Database | PostgreSQL | SQLite (`aiosqlite`) |
+| Deployment OS | Linux (Docker Compose) | Windows (PyInstaller + Task Scheduler) |
+| `VehicleStatus` values | `allowed`, `blocked` | `allowed`, `denied`, `blacklist` |
+| `AccessLog.action_type` | Not present | `auto_entry` / `manual_entry` |
+| `AccessLog.admin_id` | Not present | Nullable — set for `manual_entry` records |
+
+### Planned prompts
+
+- [ ] **Prompt 43:** SQLite migration + model updates (`blacklist` status, `action_type`, `admin_id`)
+- [ ] **Prompt 44:** `karsun_api.py` — stubs for `sync_vehicle_to_camera()`, `remove_vehicle_from_camera()`, `trigger_relay()` *(blocked on vendor API docs)*
+- [ ] **Prompt 45:** Vehicle CRUD + camera sync calls after each write
+- [ ] **Prompt 46:** Webhook refactored to `/api/webhook/camera` (statistics-only, no relay) *(field names pending vendor docs)*
+- [ ] **Prompt 47:** Manual open at `/api/relay/manual_open` with `admin_id` logging
+- [ ] **Prompt 48:** Backup/Restore API with post-import camera whitelist rebuild
+- [ ] **Prompt 49:** Windows deployment scripts (`build-windows.bat`, `start.bat`, `docs/DEPLOYMENT.md`)
+- [ ] **Prompt 50:** Karsun config variables in `config.py`, `.env.example`, `docs/CAMERA_SETUP.md`
+
+### Backward compatibility notes
+
+- `/api/webhook/anpr` kept as a deprecated alias; `/api/webhook/camera` is the new canonical path
+- `/api/relay/trigger` kept as a deprecated alias; `/api/relay/manual_open` is the new canonical path
+- `VehicleStatus.BLOCKED` remains valid; `DENIED` and `BLACKLIST` are additive
+- Existing `AccessLog` rows without `action_type` default to `auto_entry`
+- PostgreSQL + Docker path remains functional for non-Windows environments
+- Camera API stubs return `False` with a warning log until vendor documentation is received
+
+### Critical blocker
+
+> Official Karsun JS-LPRO1 HTTP API documentation is required from the vendor before Prompts 44–46 can be fully implemented. Contact vendor with requirements: (1) whitelist add/remove endpoint spec, (2) relay command endpoint spec, (3) HTTP event push payload field names and auth mechanism.
 
 ---
 
@@ -507,6 +586,9 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 7. **[camera] Confirm image field name and relay strategy against real firmware**
 8. **[subscriptions] Implement Phase 11 (Prompts 35–38): time-limited access / subscription passes** — start with DB migration (Prompt 35)
 9. **[monitoring] Implement Phase 12 (Prompts 39–42): real-time monitoring** — start with occupancy counter (Prompt 39), highest ROI items: Prompt 39 + 40 + 41
+10. **[karsun] Obtain Karsun JS-LPRO1 official HTTP API documentation from vendor** — critical blocker for Phase 13 (Prompts 44–46 cannot be fully implemented without it)
+11. **[karsun] Start Phase 13 with Prompt 43** (SQLite migration + model updates) — can proceed independently without vendor API docs
+12. **[karsun] Implement `karsun_api.py` stubs (Prompt 44)** — unblocks CRUD sync and relay integration; stubs return `False` until vendor docs arrive
 
 ## Product Readiness Exit Criteria
 
@@ -515,6 +597,57 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 3. CI quality gates and security checks stable and green
 4. System load profile meets target throughput and latency
 5. On-call/operator can complete incident runbook steps without developer intervention
+
+---
+
+## Hardware Integration: Karsun JS-LPRO1
+
+> **Target platform for Windows/Edge deployment (Phase 13, 2026-05-11 requirements).**
+
+### Architecture overview
+
+The Karsun JS-LPRO1 operates in **Edge Computing mode**: it stores a whitelist/blacklist in internal memory and makes access decisions autonomously — even without network connectivity. The FastAPI server's role is reduced to:
+
+1. Synchronising the vehicle list to the camera's internal memory on every CRUD write
+2. Receiving HTTP event logs from the camera (statistics/audit only — no relay decision logic)
+3. Sending a relay command for operator-initiated manual gate open from the dashboard
+
+### Entry / exit hardware flow
+
+- **Entry:** Induction loop triggers plate scan → camera checks internal whitelist → camera closes its own relay → camera sends HTTP log to server (if online)
+- **Exit:** Induction loop wired directly to barrier controller — hardware-only, no camera or server involvement
+
+### Integration points
+
+| # | Operation | Direction | Description |
+|---|-----------|-----------|-------------|
+| 1 | Whitelist add | Server → Camera | Add plate to camera internal whitelist on `POST`/`PUT /api/vehicles` |
+| 2 | Whitelist remove | Server → Camera | Remove plate from camera memory on `DELETE /api/vehicles/{id}` |
+| 3 | Relay trigger | Server → Camera | Force relay close for manual open from dashboard |
+| 4 | Event log (webhook) | Camera → Server | Camera sends entry/exit log after autonomous decision |
+| 5 | Bulk whitelist rebuild | Server → Camera | Full resync after `POST /api/backup/import` |
+
+### Integration gap analysis
+
+| # | Area | Status | Action required |
+|---|------|--------|-----------------|
+| 1 | Karsun HTTP API spec | ⚠️ **Blocker** | Obtain official documentation from vendor |
+| 2 | Whitelist add/remove endpoint | ⚠️ Pending | Implement in `karsun_api.py` after spec received |
+| 3 | Relay command endpoint | ⚠️ Pending | Implement in `karsun_api.py` after spec received |
+| 4 | Webhook payload field names | ⚠️ Pending | Confirm field names (plate, status, image, timestamp) |
+| 5 | Camera-to-server auth | ⚠️ Pending | Confirm auth mechanism for incoming webhook |
+| 6 | Server-to-camera auth | ⚠️ Pending | Confirm auth mechanism for whitelist/relay API calls |
+
+### Implementation order
+
+1. Obtain Karsun JS-LPRO1 HTTP API documentation from vendor (**blocker for items 2–6**)
+2. Implement `core/karsun_api.py` stubs → Prompt 44
+3. Integrate sync into Vehicle CRUD → Prompt 45
+4. Confirm webhook payload format and update endpoint → Prompt 46
+5. Implement relay trigger with `admin_id` logging → Prompt 47
+6. Implement Backup/Restore with camera whitelist rebuild → Prompt 48
+7. Build Windows deployment artifacts → Prompts 49–50
+8. Test all integration points with real hardware on LAN
 
 ---
 
