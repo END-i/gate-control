@@ -91,7 +91,10 @@ test('logout → redirects to login', async ({ page }) => {
   // Click logout button.
   const logoutBtn = page.getByRole('button', { name: /logout|вийти/i });
   await expect(logoutBtn).toBeVisible();
-  await logoutBtn.click();
+  await Promise.all([
+    page.waitForURL('/login'),
+    logoutBtn.click(),
+  ]);
 
   await page.waitForURL('/login');
   await expect(page).toHaveURL('/login');
