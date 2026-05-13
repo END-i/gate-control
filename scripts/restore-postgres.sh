@@ -22,7 +22,16 @@ if [[ ! -f "$BACKUP_PATH" ]]; then
   exit 1
 fi
 
-COMPOSE_ENV_FILE_VALUE="${COMPOSE_ENV_FILE:-./.env}"
+if [[ -n "${COMPOSE_ENV_FILE:-}" ]]; then
+  COMPOSE_ENV_FILE_VALUE="$COMPOSE_ENV_FILE"
+elif [[ -f "$ROOT_DIR/.env" ]]; then
+  COMPOSE_ENV_FILE_VALUE="./.env"
+elif [[ -f "$ROOT_DIR/.env.ci" ]]; then
+  COMPOSE_ENV_FILE_VALUE="./.env.ci"
+else
+  echo "No compose env file found (.env or .env.ci)"
+  exit 1
+fi
 POSTGRES_USER_VALUE="${POSTGRES_USER:-postgres}"
 POSTGRES_DB_VALUE="${POSTGRES_DB:-anpr}"
 RESTORE_NAME="restore-$(date -u +%s).dump"

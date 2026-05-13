@@ -11,7 +11,16 @@ if [[ -f "$ENV_LOADER" ]]; then
   load_env_file_if_present "$ENV_FILE"
 fi
 
-COMPOSE_ENV_FILE_VALUE="${COMPOSE_ENV_FILE:-./.env}"
+if [[ -n "${COMPOSE_ENV_FILE:-}" ]]; then
+  COMPOSE_ENV_FILE_VALUE="$COMPOSE_ENV_FILE"
+elif [[ -f "$ROOT_DIR/.env" ]]; then
+  COMPOSE_ENV_FILE_VALUE="./.env"
+elif [[ -f "$ROOT_DIR/.env.ci" ]]; then
+  COMPOSE_ENV_FILE_VALUE="./.env.ci"
+else
+  echo "No compose env file found (.env or .env.ci)"
+  exit 1
+fi
 POSTGRES_USER_VALUE="${POSTGRES_USER:-postgres}"
 POSTGRES_DB_VALUE="${POSTGRES_DB:-anpr}"
 BACKUP_DIR_VALUE="${BACKUP_DIR:-$ROOT_DIR/backups}"
