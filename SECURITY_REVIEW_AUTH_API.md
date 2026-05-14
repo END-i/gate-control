@@ -157,7 +157,7 @@ Add server-side file validation before storage:
 
 1. Validate file signature / magic bytes.
 2. Decode the image with a trusted imaging library.
-3. Re-encode the image into a safe output format (for example JPEG/PNG) to strip embedded active content and metadata.
+3. Re-encode the image into a safe output format (e.g., JPEG/PNG) to strip embedded active content and metadata.
 4. Serve uploaded media from a separate static/media domain with restrictive headers.
 
 ### Recommended implementation direction
