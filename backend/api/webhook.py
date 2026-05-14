@@ -33,6 +33,10 @@ ALLOWED_IMAGE_CONTENT_TYPES = {
     "image/png": ".png",
     "image/webp": ".webp",
 }
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+JPEG_SIGNATURE = b"\xff\xd8\xff"
+RIFF_SIGNATURE = b"RIFF"
+WEBP_SIGNATURE = b"WEBP"
 
 INVALID_WEBHOOK_SIGNATURE = "Invalid webhook signature"
 INVALID_MULTIPART_PAYLOAD = "Invalid multipart payload"
@@ -141,6 +145,16 @@ def _verify_webhook_auth(
     _verify_webhook_hmac(raw_body, x_webhook_timestamp, x_webhook_signature)
 
 
+def _validate_image_signature(content_type: str, content: bytes) -> bool:
+    if content_type == "image/jpeg":
+        return content.startswith(JPEG_SIGNATURE)
+    if content_type == "image/png":
+        return content.startswith(PNG_SIGNATURE)
+    if content_type == "image/webp":
+        return len(content) >= 12 and content.startswith(RIFF_SIGNATURE) and content[8:12] == WEBP_SIGNATURE
+    return False
+
+
 async def _save_image_async(image: UploadFile) -> str:
     settings = get_settings()
     content_type = (image.content_type or "").lower()
@@ -152,6 +166,8 @@ async def _save_image_async(image: UploadFile) -> str:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty image payload")
     if len(content) > settings.webhook_max_image_bytes:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image payload is too large")
+    if not _validate_image_signature(content_type, content):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image payload")
 
     original_suffix = Path(image.filename or "upload.bin").suffix.lower()
     allowed_suffix = ALLOWED_IMAGE_CONTENT_TYPES[content_type]
