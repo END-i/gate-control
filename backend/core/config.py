@@ -16,7 +16,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    database_url: str = Field(alias="DATABASE_URL")
+    database_url: str = Field(default="sqlite+aiosqlite:///./anpr.db", alias="DATABASE_URL")
     secret_key: str = Field(alias="SECRET_KEY")
     relay_ip: str = Field(alias="RELAY_IP")
     relay_username: str = Field(alias="RELAY_USERNAME")
@@ -49,6 +49,17 @@ class Settings(BaseSettings):
     vault_addr: str = Field(default="", alias="VAULT_ADDR")
     vault_token: str = Field(default="", alias="VAULT_TOKEN")
     vault_secret_path: str = Field(default="secret/data/anpr", alias="VAULT_SECRET_PATH")
+    cors_allow_all_origins: bool = Field(default=False, alias="CORS_ALLOW_ALL_ORIGINS")
+    subscription_expiry_check_interval_seconds: int = Field(
+        default=3600, alias="SUBSCRIPTION_EXPIRY_CHECK_INTERVAL_SECONDS"
+    )
+    # Karsun JS-LPRO1 camera integration
+    karsun_ip: str = Field(default="", alias="KARSUN_IP")
+    karsun_username: str = Field(default="admin", alias="KARSUN_USERNAME")
+    karsun_password: str = Field(default="", alias="KARSUN_PASSWORD")
+    karsun_relay_path: str = Field(default="/api/relay", alias="KARSUN_RELAY_PATH")
+    karsun_whitelist_add_path: str = Field(default="/api/whitelist/add", alias="KARSUN_WHITELIST_ADD_PATH")
+    karsun_whitelist_remove_path: str = Field(default="/api/whitelist/remove", alias="KARSUN_WHITELIST_REMOVE_PATH")
     # Media storage
     media_storage_backend: Literal["local", "s3"] = Field(default="local", alias="MEDIA_STORAGE_BACKEND")
     media_retention_hot_days: int = Field(default=30, alias="MEDIA_RETENTION_HOT_DAYS")

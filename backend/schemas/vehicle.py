@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field, field_validator
 
 from models.vehicle import VehicleStatus
@@ -9,6 +11,8 @@ class VehicleBase(BaseModel):
     license_plate: str = Field(min_length=3, max_length=32)
     status: VehicleStatus = VehicleStatus.BLOCKED
     owner_info: str | None = Field(default=None, max_length=255)
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
 
     @field_validator("license_plate")
     @classmethod
@@ -24,6 +28,8 @@ class VehicleUpdate(BaseModel):
     license_plate: str | None = Field(default=None, min_length=3, max_length=32)
     status: VehicleStatus | None = None
     owner_info: str | None = Field(default=None, max_length=255)
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
 
     @field_validator("license_plate")
     @classmethod
@@ -38,6 +44,9 @@ class VehicleRead(BaseModel):
     license_plate: str
     status: VehicleStatus
     owner_info: str | None
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+    camera_sync: bool = False
 
     model_config = {"from_attributes": True}
 

@@ -8,6 +8,8 @@ on:
 jobs:
   postgres-backup-restore:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -47,7 +49,7 @@ jobs:
           docker exec "${POSTGRES_CONTAINER_ID}" pg_isready -U postgres
 
       - name: Upload latest backup artifact
-        if: always()
+        if: success() || failure()
         uses: actions/upload-artifact@v5
         with:
           name: postgres-backup-latest

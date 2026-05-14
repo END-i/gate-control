@@ -183,7 +183,6 @@ def test_webhook_unknown_plate_is_denied(client, monkeypatch):
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "denied"
-    assert payload["relay_triggered"] is False
 
 
 # ---------------------------------------------------------------------------

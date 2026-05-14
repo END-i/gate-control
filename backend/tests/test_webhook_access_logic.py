@@ -27,8 +27,7 @@ def test_webhook_opens_gate_for_allowed_vehicle(client, monkeypatch):
 
     assert webhook_response.status_code == 200
     payload = webhook_response.json()
-    assert payload['status'] == 'opened'
-    assert payload['relay_triggered'] is True
+    assert payload['status'] == 'allowed'
 
 
 def test_webhook_denies_blocked_vehicle_and_does_not_trigger_relay(client, monkeypatch):
@@ -52,7 +51,6 @@ def test_webhook_denies_blocked_vehicle_and_does_not_trigger_relay(client, monke
     assert webhook_response.status_code == 200
     payload = webhook_response.json()
     assert payload['status'] == 'denied'
-    assert payload['relay_triggered'] is False
 
 
 def test_webhook_accepts_dahua_camelcase_field_names(client, monkeypatch):
@@ -76,5 +74,5 @@ def test_webhook_accepts_dahua_camelcase_field_names(client, monkeypatch):
 
     assert webhook_response.status_code == 200
     payload = webhook_response.json()
-    assert payload['status'] == 'opened'
+    assert payload['status'] == 'allowed'
     assert payload['plate'] == 'ITC413AA'

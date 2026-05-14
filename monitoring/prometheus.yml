@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: anpr_backend
+    # /metrics is open when METRICS_API_KEY is empty (default dev setting).
+    # For production set METRICS_API_KEY and configure bearer_token here.
+    static_configs:
+      - targets:
+          - backend:8010
+    metrics_path: /metrics
+    scheme: http

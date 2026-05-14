@@ -9,6 +9,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import SessionLocal
+from core.shutdown import is_shutting_down
 from models.access_log import AccessLog
 
 
@@ -71,7 +72,7 @@ def _remove_empty_dirs(root: Path) -> None:
 
 
 async def run_cleanup_service(days: int = 30, interval_hours: int = 24) -> None:
-    while True:
+    while not is_shutting_down():
         try:
             await cleanup_old_data(days=days)
         except Exception as exc:

@@ -62,6 +62,7 @@
 				<a class="block rounded px-3 py-2 hover:bg-gray-100" href="/">{$_('layout.dashboard')}</a>
 				<a class="block rounded px-3 py-2 hover:bg-gray-100" href="/vehicles">{$_('layout.vehicles')}</a>
 				<a class="block rounded px-3 py-2 hover:bg-gray-100" href="/logs">{$_('layout.logs')}</a>
+				<a class="block rounded px-3 py-2 hover:bg-gray-100" href="/audit">{$_('layout.audit')}</a>
 			</nav>
 		</aside>
 

@@ -15,6 +15,7 @@
     "dashboard": "Dashboard",
     "vehicles": "Vehicles",
     "logs": "Logs",
+    "audit": "Audit Log",
     "manualTrigger": "Manual Trigger",
     "gateOpened": "Gate opened",
     "triggerFailed": "Relay trigger failed",
@@ -34,7 +35,18 @@
     "totalVehicles": "Total Vehicles",
     "todayAccesses": "Today's Accesses",
     "todayDenied": "Today's Denied",
+    "activeSubscriptions": "Active Subscriptions",
+    "expiringSoon": "Expiring Soon (7d)",
     "failed": "Failed to load stats"
+  },
+  "ticker": {
+    "title": "Live Events",
+    "live": "live",
+    "connecting": "connecting",
+    "waiting": "Waiting for events…",
+    "allowed": "allowed",
+    "denied": "denied",
+    "connectFailed": "Could not connect to live stream"
   },
   "vehicles": {
     "title": "Vehicles",
@@ -52,7 +64,18 @@
     "plateValidation": "License plate must be 3-12 uppercase letters or digits",
     "emptyOwner": "-",
     "allowed": "allowed",
-    "blocked": "blocked"
+    "blocked": "blocked",
+    "validFrom": "Valid From",
+    "validUntil": "Valid Until",
+    "permanent": "Permanent",
+    "active": "Active",
+    "expired": "Expired",
+    "expiringSoon": "Expiring soon",
+    "filter_all": "All",
+    "filter_active": "Active",
+    "filter_expiring_soon": "Expiring soon",
+    "filter_expired": "Expired",
+    "filter_permanent": "Permanent"
   },
   "logs": {
     "title": "Access Logs",
@@ -73,5 +96,18 @@
     "close": "Close",
     "alt": "Access snapshot",
     "closeLabel": "Close image modal"
+  },
+  "audit": {
+    "title": "Audit Log",
+    "eventType": "Event Type",
+    "actor": "Actor",
+    "time": "Time",
+    "result": "Result",
+    "details": "Details",
+    "ok": "ok",
+    "fail": "fail",
+    "empty": "No audit events found",
+    "failed": "Failed to load audit log",
+    "clearFilters": "Clear"
   }
 }

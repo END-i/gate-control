@@ -13,12 +13,13 @@ from core.config import get_settings
 from core.database import get_db
 from core.rate_limit import enforce_rate_limit
 from core.storage import get_storage
+from core.prom_metrics import WEBHOOK_DUPLICATE_TOTAL
 from crud.access_log import create_access_log
-from crud.relay_job import create_relay_job
 from crud.security_audit import create_security_audit_event
 from crud.webhook_event import register_webhook_event
 from crud.vehicle import get_vehicle_by_plate
 from models.vehicle import VehicleStatus
+from core.occupancy import occupancy_tracker, _ENTER_DIRECTIONS, _LEAVE_DIRECTIONS
 from core.system_status import mark_webhook_received
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
@@ -100,8 +101,8 @@ async def _save_image_async(image: UploadFile) -> str:
     return await storage.save(content=content, suffix=suffix)
 
 
-@router.post("/anpr")
-async def handle_anpr_webhook(
+@router.post("/camera")
+async def handle_camera_webhook(
     request: Request,
     x_webhook_token: str | None = Header(default=None, alias="X-Webhook-Token"),
     x_webhook_timestamp: str | None = Header(default=None, alias="X-Webhook-Timestamp"),
@@ -139,6 +140,7 @@ async def handle_anpr_webhook(
     clean_plate = plate_number.replace(" ", "").upper()
     is_new_event = await register_webhook_event(db, event_key=event_key, plate_number=clean_plate)
     if not is_new_event:
+        WEBHOOK_DUPLICATE_TOTAL.inc()
         await create_security_audit_event(
             db,
             event_type="webhook_duplicate",
@@ -165,38 +167,56 @@ async def handle_anpr_webhook(
         license_plate=clean_plate,
         access_granted=is_allowed,
         image_path=image_path,
+        action_type="auto_entry",
+        admin_id=None,
     )
 
-    relay_triggered = False
-    if is_allowed:
-        await create_relay_job(
-            db,
-            event_type="webhook_allowed",
-            plate_number=clean_plate,
-            requested_by="anpr-webhook",
-            max_attempts=settings.relay_worker_max_attempts,
-        )
-        relay_triggered = True
+    # Relay is NOT triggered here — Karsun camera operates autonomously.
+    # /api/relay/manual_open handles operator-initiated opens.
+
+    direction_raw = form.get("direction") or form.get("vehicleDirection") or ""
+    if direction_raw:
+        direction_str = str(direction_raw).lower()
+        if direction_str in _ENTER_DIRECTIONS:
+            await occupancy_tracker.enter(db)
+        elif direction_str in _LEAVE_DIRECTIONS:
+            await occupancy_tracker.leave(db)
 
     await create_security_audit_event(
         db,
         event_type="webhook_processed",
         actor="anpr-webhook",
         success=True,
-        details=f"plate={clean_plate} granted={is_allowed} relay={relay_triggered}",
+        details=f"plate={clean_plate} granted={is_allowed}",
     )
 
     logger.info(
-        'Webhook processed plate={} granted={} relay_triggered={} image_path={}',
+        'Webhook processed plate={} granted={} image_path={}',
         clean_plate,
         is_allowed,
-        relay_triggered,
         image_path,
     )
 
     return {
-        "status": "opened" if is_allowed else "denied",
+        "status": "allowed" if is_allowed else "denied",
         "plate": clean_plate,
         "image_path": image_path,
-        "relay_triggered": relay_triggered,
     }
+
+
+@router.post("/anpr", deprecated=True)
+async def handle_anpr_webhook_legacy(
+    request: Request,
+    x_webhook_token: str | None = Header(default=None, alias="X-Webhook-Token"),
+    x_webhook_timestamp: str | None = Header(default=None, alias="X-Webhook-Timestamp"),
+    x_webhook_signature: str | None = Header(default=None, alias="X-Webhook-Signature"),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str | bool]:
+    """Deprecated alias for /api/webhook/camera — kept for backward compatibility."""
+    return await handle_camera_webhook(
+        request=request,
+        x_webhook_token=x_webhook_token,
+        x_webhook_timestamp=x_webhook_timestamp,
+        x_webhook_signature=x_webhook_signature,
+        db=db,
+    )

@@ -6,6 +6,7 @@ from loguru import logger
 from core.config import get_settings
 from core.database import SessionLocal
 from core.hardware import trigger_relay
+from core.shutdown import is_shutting_down
 from crud.relay_job import claim_next_relay_job, mark_relay_job_failed, mark_relay_job_succeeded
 from crud.security_audit import create_security_audit_event
 
@@ -14,7 +15,7 @@ async def run_relay_worker() -> None:
     settings = get_settings()
     poll_seconds = max(1, settings.relay_worker_poll_seconds)
 
-    while True:
+    while not is_shutting_down():
         try:
             async with SessionLocal() as db:
                 item = await claim_next_relay_job(db)
