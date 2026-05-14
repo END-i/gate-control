@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from main import _validate_runtime_secrets, settings
+from tests.helpers import TINY_JPEG_BYTES
 
 
 def get_auth_headers(client):
@@ -87,6 +88,20 @@ def test_webhook_rejects_too_large_image_payload(client, monkeypatch):
 
     assert response.status_code == 400
     assert response.json()['detail'] == 'Image payload is too large'
+
+
+def test_webhook_rejects_invalid_plate_number(client, monkeypatch):
+    monkeypatch.setenv('WEBHOOK_AUTH_MODE', 'token')
+
+    response = client.post(
+        '/api/webhook/anpr',
+        data={'plate_number': 'AA1234<script>'},
+        files={'image': ('sample.jpg', TINY_JPEG_BYTES, 'image/jpeg')},
+        headers={'X-Webhook-Token': 'webhook-secret'},
+    )
+
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'Invalid plate number'
 
 
 def test_cors_allows_localhost_ports(client):

@@ -1,6 +1,6 @@
 """Karsun: action_type + admin_id in access_logs; extend vehicle_status enum
 
-Revision ID: 0004_karsun_access_log_action_type
+Revision ID: 0004_access_log_action_type
 Revises: 0003_relay_job_queue
 Create Date: 2026-05-13 00:00:00
 """
@@ -9,7 +9,7 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0004_karsun_access_log_action_type"
+revision = "0004_access_log_action_type"
 down_revision = "0003_relay_job_queue"
 branch_labels = None
 depends_on = None

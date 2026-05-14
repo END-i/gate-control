@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from crud.relay_job import claim_next_relay_job, create_relay_job
 from models.relay_job import RelayJobStatus
+from tests.helpers import TINY_JPEG_BYTES
 
 
 # ---------------------------------------------------------------------------
@@ -176,7 +177,7 @@ def test_webhook_unknown_plate_is_denied(client, monkeypatch):
     response = client.post(
         "/api/webhook/anpr",
         data={"plate_number": "UNKNOWN1"},
-        files={"image": ("sample.jpg", b"data", "image/jpeg")},
+        files={"image": ("sample.jpg", TINY_JPEG_BYTES, "image/jpeg")},
         headers={"X-Webhook-Token": "webhook-secret", "X-Event-Id": "evt-unknown-1"},
     )
 

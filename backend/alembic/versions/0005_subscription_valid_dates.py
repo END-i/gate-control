@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "0005_subscription_valid_dates"
-down_revision = "0004_karsun_access_log_action_type"
+down_revision = "0004_access_log_action_type"
 branch_labels = None
 depends_on = None
 

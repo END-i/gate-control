@@ -7,7 +7,12 @@
     "delete": "Удалить",
     "edit": "Редактировать",
     "actions": "Действия",
-    "status": "Статус"
+    "status": "Статус",
+    "errorRequest": "Ошибка запроса",
+    "errorUnauthorized": "Требуется авторизация",
+    "errorForbidden": "Доступ запрещён",
+    "errorRateLimited": "Слишком много запросов, попробуйте позже",
+    "errorServer": "Ошибка сервера, попробуйте позже"
   },
   "layout": {
     "title": "ANPR Админ",

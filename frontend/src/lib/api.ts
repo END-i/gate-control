@@ -8,6 +8,23 @@ type RequestOptions = RequestInit & {
   skipAuth?: boolean;
 };
 
+const SAFE_ERROR_KEY_BY_STATUS: Record<number, string> = {
+  400: 'common.errorRequest',
+  401: 'common.errorUnauthorized',
+  403: 'common.errorForbidden',
+  404: 'common.errorRequest',
+  409: 'common.errorRequest',
+  422: 'common.errorRequest',
+  429: 'common.errorRateLimited'
+};
+
+function resolveSafeErrorKey(response: Response): string {
+  if (response.status >= 500) {
+    return 'common.errorServer';
+  }
+  return SAFE_ERROR_KEY_BY_STATUS[response.status] ?? 'common.errorRequest';
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const token = get(authToken);
   const headers = new Headers(options.headers ?? {});
@@ -23,13 +40,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   if (response.status === 401) {
     clearAuthToken();
-    throw new Error('Unauthorized');
+    throw new Error('common.errorUnauthorized');
   }
 
   if (!response.ok) {
-    const maybeJson = await response.json().catch(() => null);
-    const detail = maybeJson?.detail ?? response.statusText;
-    throw new Error(detail || 'Request failed');
+    throw new Error(resolveSafeErrorKey(response));
   }
 
   if (response.status === 204) {

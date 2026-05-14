@@ -7,7 +7,12 @@
     "delete": "Delete",
     "edit": "Edit",
     "actions": "Actions",
-    "status": "Status"
+    "status": "Status",
+    "errorRequest": "Request failed",
+    "errorUnauthorized": "Unauthorized",
+    "errorForbidden": "Access denied",
+    "errorRateLimited": "Too many requests, try again later",
+    "errorServer": "Server error, please try again later"
   },
   "layout": {
     "title": "ANPR Admin",

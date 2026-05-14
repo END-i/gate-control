@@ -7,7 +7,12 @@
     "delete": "Изтрий",
     "edit": "Редактирай",
     "actions": "Действия",
-    "status": "Статус"
+    "status": "Статус",
+    "errorRequest": "Грешка при заявката",
+    "errorUnauthorized": "Изисква се удостоверяване",
+    "errorForbidden": "Достъпът е отказан",
+    "errorRateLimited": "Твърде много заявки, опитайте по-късно",
+    "errorServer": "Сървърна грешка, опитайте по-късно"
   },
   "layout": {
     "title": "ANPR Админ",
