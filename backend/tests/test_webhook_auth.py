@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import hmac
 from datetime import datetime, timedelta, timezone
@@ -94,6 +95,38 @@ def test_webhook_hmac_mode_valid_signature(client, monkeypatch):
     )
 
     assert response.status_code == 200
+
+
+def test_webhook_basic_mode_valid_authorization(client, monkeypatch):
+    monkeypatch.setenv('WEBHOOK_AUTH_MODE', 'basic')
+    monkeypatch.setenv('WEBHOOK_BASIC_USERNAME', 'dahua-user')
+    monkeypatch.setenv('WEBHOOK_BASIC_PASSWORD', 'dahua-pass')
+    token = base64.b64encode(b'dahua-user:dahua-pass').decode('ascii')
+
+    response = client.post(
+        '/api/webhook/anpr',
+        data={'plate_number': 'AA1234BB'},
+        files={'image': ('sample.jpg', TINY_JPEG_BYTES, 'image/jpeg')},
+        headers={'Authorization': f'Basic {token}'},
+    )
+
+    assert response.status_code == 200
+
+
+def test_webhook_basic_mode_invalid_authorization(client, monkeypatch):
+    monkeypatch.setenv('WEBHOOK_AUTH_MODE', 'basic')
+    monkeypatch.setenv('WEBHOOK_BASIC_USERNAME', 'dahua-user')
+    monkeypatch.setenv('WEBHOOK_BASIC_PASSWORD', 'dahua-pass')
+    token = base64.b64encode(b'dahua-user:wrong-pass').decode('ascii')
+
+    response = client.post(
+        '/api/webhook/anpr',
+        data={'plate_number': 'AA1234BB'},
+        files={'image': ('sample.jpg', TINY_JPEG_BYTES, 'image/jpeg')},
+        headers={'Authorization': f'Basic {token}'},
+    )
+
+    assert response.status_code == 401
 
 
 def test_webhook_duplicate_event_id_skips_processing(client, monkeypatch):

@@ -63,6 +63,9 @@ def _validate_runtime_secrets() -> None:
     }
     if settings.webhook_auth_mode == "hmac":
         checks["WEBHOOK_HMAC_SECRET"] = settings.webhook_hmac_secret
+    if settings.webhook_auth_mode == "basic":
+        checks["WEBHOOK_BASIC_USERNAME"] = settings.webhook_basic_username
+        checks["WEBHOOK_BASIC_PASSWORD"] = settings.webhook_basic_password
 
     for key, value in checks.items():
         if not value or value.strip().lower() == "change-me":

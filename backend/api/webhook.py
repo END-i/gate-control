@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hmac
 import hashlib
+import base64
+import binascii
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,6 +41,7 @@ RIFF_SIGNATURE = b"RIFF"
 WEBP_SIGNATURE = b"WEBP"
 
 INVALID_WEBHOOK_SIGNATURE = "Invalid webhook signature"
+INVALID_WEBHOOK_BASIC_AUTH = "Invalid webhook basic auth"
 INVALID_MULTIPART_PAYLOAD = "Invalid multipart payload"
 INVALID_PLATE_NUMBER = "Invalid plate number"
 # Restrict header-supplied event keys to a bounded safe character set before storing them.
@@ -109,6 +112,37 @@ def _verify_webhook_hmac(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_WEBHOOK_SIGNATURE)
 
 
+def _decode_basic_auth_credentials(authorization_header: str | None) -> tuple[str, str]:
+    if not authorization_header:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_WEBHOOK_BASIC_AUTH)
+
+    scheme, _, encoded = authorization_header.partition(" ")
+    if not hmac.compare_digest(scheme.lower(), "basic") or not encoded:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_WEBHOOK_BASIC_AUTH)
+
+    try:
+        decoded = base64.b64decode(encoded, validate=True).decode("utf-8")
+    except (binascii.Error, UnicodeDecodeError) as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_WEBHOOK_BASIC_AUTH) from exc
+
+    username, separator, password = decoded.partition(":")
+    if separator != ":":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_WEBHOOK_BASIC_AUTH)
+    return username, password
+
+
+def _verify_webhook_basic_auth(authorization_header: str | None) -> None:
+    settings = get_settings()
+    expected_username = settings.webhook_basic_username
+    expected_password = settings.webhook_basic_password
+    if not expected_username or not expected_password:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_WEBHOOK_BASIC_AUTH)
+
+    username, password = _decode_basic_auth_credentials(authorization_header)
+    if not hmac.compare_digest(username, expected_username) or not hmac.compare_digest(password, expected_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_WEBHOOK_BASIC_AUTH)
+
+
 def _extract_event_key(raw_body: bytes, event_id_header: str | None) -> str:
     if event_id_header and EVENT_KEY_PATTERN.fullmatch(event_id_header):
         return event_id_header
@@ -138,9 +172,13 @@ def _verify_webhook_auth(
     x_webhook_token: str | None,
     x_webhook_timestamp: str | None,
     x_webhook_signature: str | None,
+    authorization: str | None,
 ) -> None:
     if auth_mode == "token":
         _verify_webhook_token(x_webhook_token)
+        return
+    if auth_mode == "basic":
+        _verify_webhook_basic_auth(authorization)
         return
     _verify_webhook_hmac(raw_body, x_webhook_timestamp, x_webhook_signature)
 
@@ -274,6 +312,7 @@ async def handle_camera_webhook(
     x_webhook_token: str | None = Header(default=None, alias="X-Webhook-Token"),
     x_webhook_timestamp: str | None = Header(default=None, alias="X-Webhook-Timestamp"),
     x_webhook_signature: str | None = Header(default=None, alias="X-Webhook-Signature"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str | bool]:
     settings = get_settings()
@@ -294,6 +333,7 @@ async def handle_camera_webhook(
         x_webhook_token,
         x_webhook_timestamp,
         x_webhook_signature,
+        authorization,
     )
 
     clean_plate = _normalize_plate_number(plate_number)
@@ -332,6 +372,7 @@ async def handle_anpr_webhook_legacy(
     x_webhook_token: str | None = Header(default=None, alias="X-Webhook-Token"),
     x_webhook_timestamp: str | None = Header(default=None, alias="X-Webhook-Timestamp"),
     x_webhook_signature: str | None = Header(default=None, alias="X-Webhook-Signature"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str | bool]:
     """Deprecated alias for /api/webhook/camera — kept for backward compatibility."""
@@ -340,5 +381,6 @@ async def handle_anpr_webhook_legacy(
         x_webhook_token=x_webhook_token,
         x_webhook_timestamp=x_webhook_timestamp,
         x_webhook_signature=x_webhook_signature,
+        authorization=authorization,
         db=db,
     )

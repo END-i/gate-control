@@ -106,6 +106,7 @@ Critical variables must fail fast if missing:
 6. RELAY_PASSWORD
 7. WEBHOOK_SHARED_SECRET
 8. WEBHOOK_AUTH_MODE
+9. WEBHOOK_BASIC_USERNAME / WEBHOOK_BASIC_PASSWORD (required when `WEBHOOK_AUTH_MODE=basic`)
 
 Optional variables must have safe defaults:
 
