@@ -9,7 +9,7 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0004_karsun_access_log_action_type"
+revision = "0004_access_log_action_type"
 down_revision = "0003_relay_job_queue"
 branch_labels = None
 depends_on = None
