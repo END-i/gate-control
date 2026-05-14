@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FRONTEND_DIR="$ROOT_DIR/frontend"
 ENV_FILE="$ROOT_DIR/.env"
 ENV_LOADER="$ROOT_DIR/scripts/lib/load-env.sh"
+PNPM_LOADER="$ROOT_DIR/scripts/lib/ensure-pnpm.sh"
 
 if [[ -f "$ENV_LOADER" ]]; then
   # shellcheck source=./lib/load-env.sh
@@ -12,7 +13,11 @@ if [[ -f "$ENV_LOADER" ]]; then
   load_env_file_if_present "$ENV_FILE"
 fi
 
-if ! command -v pnpm >/dev/null 2>&1; then
+if [[ -f "$PNPM_LOADER" ]]; then
+  # shellcheck source=./lib/ensure-pnpm.sh
+  source "$PNPM_LOADER"
+  ensure_pnpm
+elif ! command -v pnpm >/dev/null 2>&1; then
   echo "pnpm is not installed. Install Node.js + pnpm first."
   exit 1
 fi

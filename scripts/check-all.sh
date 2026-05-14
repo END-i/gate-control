@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/backend"
 FRONTEND_DIR="$ROOT_DIR/frontend"
+PNPM_LOADER="$ROOT_DIR/scripts/lib/ensure-pnpm.sh"
 PYTHON_BIN_DEFAULT="$ROOT_DIR/.venv/bin/python"
 PYTHON_BIN_BACKEND_VENV="$BACKEND_DIR/.venv/bin/python"
 
@@ -57,19 +58,29 @@ print_step "Backend tests"
 "$PYTHON_BIN" -m pytest "$BACKEND_DIR/tests" -q
 
 if [[ "$SKIP_FRONTEND" -eq 0 ]]; then
+  if [[ -f "$PNPM_LOADER" ]]; then
+    # shellcheck source=./lib/ensure-pnpm.sh
+    source "$PNPM_LOADER"
+    ensure_pnpm
+  elif ! command -v pnpm >/dev/null 2>&1; then
+    echo "ERROR: pnpm is not installed. Install Node.js + pnpm first."
+    exit 1
+  fi
+
   print_step "Frontend install"
   pnpm --dir "$FRONTEND_DIR" install --frozen-lockfile
 
-  print_step "Frontend lint"
   if grep -q '"lint"' "$FRONTEND_DIR/package.json"; then
+    print_step "Frontend lint"
     pnpm --dir "$FRONTEND_DIR" lint
-  else
-    echo "WARN: frontend lint script not found, using check as fallback"
-    pnpm --dir "$FRONTEND_DIR" check
   fi
 
-  print_step "Frontend typecheck"
-  pnpm --dir "$FRONTEND_DIR" check
+  if grep -q '"check"' "$FRONTEND_DIR/package.json"; then
+    print_step "Frontend typecheck"
+    pnpm --dir "$FRONTEND_DIR" check
+  else
+    echo "WARN: frontend check script not found, skipping frontend typecheck"
+  fi
 
   print_step "Frontend tests"
   if grep -q '"test:run"' "$FRONTEND_DIR/package.json"; then
