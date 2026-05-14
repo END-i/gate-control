@@ -22,11 +22,11 @@ cd C:\anpr
 
 ## Step 2: Configure environment variables
 
-Copy `.env.example` to `.env` inside the `backend\` directory and fill in all values:
+Copy `.env.example` to `.env` in the project root and fill in all values:
 
 ```bat
-copy backend\.env.example backend\.env
-notepad backend\.env
+copy .env.example .env
+notepad .env
 ```
 
 Key settings for Windows / Karsun deployment:
@@ -52,7 +52,7 @@ pip install pyinstaller
 
 ```bat
 cd C:\anpr
-scripts\build-windows.bat
+npm run build:exe
 ```
 
 Output: `backend\dist\anpr-backend.exe`
@@ -116,7 +116,7 @@ Configure the camera to push HTTP events to `http://192.168.1.10:8000/api/webhoo
 
 1. Stop the Task Scheduler task (or reboot will be needed after update)
 2. Pull latest code: `git pull`
-3. Rebuild: `scripts\build-windows.bat` and `cd frontend && npm run build`
+3. Rebuild: `npm run build:exe` and `cd frontend && npm run build`
 4. Restart the Task Scheduler task (or reboot)
 
 ## Troubleshooting

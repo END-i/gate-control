@@ -44,6 +44,7 @@ backend/.venv/bin/python -m pip install -r backend/requirements.txt
 npm run backend   # backend only
 npm run frontend  # frontend only
 npm run dev       # backend + frontend
+npm run build:exe # build backend .exe on Windows hosts
 npm run doctor    # health + CORS diagnostics
 npm run smoke     # login/status/stats/logs smoke flow
 npm run smoke:critical # allowed/blocked webhook decision flow
@@ -55,6 +56,7 @@ Equivalent direct scripts:
 ./scripts/run-backend.sh
 ./scripts/run-frontend.sh
 ./scripts/run-dev.sh
+./scripts/build-exe.sh
 ./scripts/doctor.sh
 ./scripts/smoke-e2e.sh
 ```

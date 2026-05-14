@@ -170,11 +170,13 @@ It is intended as an onboarding and maintenance reference.
 - `scripts/run-backend.sh`: Backend runner with root `.env` loading.
 - `scripts/run-frontend.sh`: Frontend runner with root `.env` loading.
 - `scripts/run-dev.sh`: Combined local runner (backend + frontend) with process cleanup trap.
+- `scripts/build-exe.sh`: Root EXE build wrapper for Windows (`build-windows.bat` launcher).
 - `scripts/check-all.sh`: Local quality gate (lint, typecheck, tests, docker builds, optional coverage).
 - `scripts/coverage-all.sh`: Unified backend/frontend coverage run with backend fail-under threshold.
 - `scripts/doctor.sh`: Runtime diagnostics (health, CORS, frontend reachability).
 - `scripts/smoke-e2e.sh`: API smoke flow (login/me/status/stats/logs).
 - `scripts/lib/load-env.sh`: Shared `.env` parser/loader used by run scripts.
+- `scripts/lib/ensure-pnpm.sh`: Shared pnpm bootstrap helper via corepack.
 
 ## Documentation (`docs/`)
 
