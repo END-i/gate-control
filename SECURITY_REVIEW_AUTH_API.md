@@ -24,7 +24,7 @@ Supporting auth infrastructure was also checked where needed:
 The repository validation command was executed before creating this report:
 
 - Command: `./scripts/check-all.sh`
-- Result: failed immediately because `ruff` is not installed in the current environment (`/usr/bin/python3: No module named ruff`)
+- Result in the current task environment: failed immediately because `ruff` is not installed (`/usr/bin/python3: No module named ruff`)
 
 ## Executive summary
 
@@ -143,7 +143,7 @@ Safer options:
 
 ### Why this is risky
 
-`_save_image_async()` allows uploads based on:
+`_save_image_async()` in `/home/runner/work/gate-control/gate-control/backend/api/webhook.py` currently allows uploads based on:
 
 - declared `image.content_type`
 - file size
@@ -327,7 +327,7 @@ Harden the token format:
 
 The following controls are good and should be preserved:
 
-- Generic invalid-credential response in `/backend/api/auth.py`
+- Generic invalid-credential response in `/home/runner/work/gate-control/gate-control/backend/api/auth.py`
 - Role enforcement via `require_roles(...)`
 - Rate limiting on login, webhook, relay trigger, and sensitive endpoints
 - `hmac.compare_digest(...)` for webhook secret comparison
