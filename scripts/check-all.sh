@@ -61,7 +61,7 @@ if [[ "$SKIP_FRONTEND" -eq 0 ]]; then
   if [[ -f "$PNPM_LOADER" ]]; then
     # shellcheck source=./lib/ensure-pnpm.sh
     source "$PNPM_LOADER"
-    ensure_pnpm
+    ensure_pnpm || exit 1
   elif ! command -v pnpm >/dev/null 2>&1; then
     echo "ERROR: pnpm is not installed. Install Node.js + pnpm first."
     exit 1
