@@ -3,7 +3,6 @@ from __future__ import annotations
 import hmac
 import hashlib
 import re
-from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import cast
@@ -11,7 +10,7 @@ from typing import cast
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, UploadFile, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.datastructures import UploadFile as StarletteUploadFile
+from starlette.datastructures import FormData, UploadFile as StarletteUploadFile
 
 from core.config import get_settings
 from core.database import get_db
@@ -35,13 +34,14 @@ ALLOWED_IMAGE_CONTENT_TYPES = {
 
 INVALID_WEBHOOK_SIGNATURE = "Invalid webhook signature"
 INVALID_MULTIPART_PAYLOAD = "Invalid multipart payload"
+# Restrict header-supplied event keys to a bounded safe character set before storing them.
 EVENT_KEY_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 SHA256_HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
-def _verify_webhook_token(token: str | None, expected: str | None = None) -> None:
-    safe_expected = expected or get_settings().webhook_shared_secret
-    if token is None or not hmac.compare_digest(token, safe_expected):
+def _verify_webhook_token(token: str | None) -> None:
+    expected = get_settings().webhook_shared_secret
+    if token is None or not hmac.compare_digest(token, expected):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook token")
 
 
@@ -105,9 +105,10 @@ def _extract_event_key(raw_body: bytes, event_id_header: str | None) -> str:
     return hashlib.sha256(raw_body).hexdigest()
 
 
-def _extract_plate_and_image(form: Mapping[str, object]) -> tuple[str, UploadFile]:
+def _extract_plate_and_image(form: FormData) -> tuple[str, UploadFile]:
     plate_number = form.get("plate_number") or form.get("plateNumber")
     image = form.get("image") or form.get("plateImage")
+    # `request.form()` may surface Starlette's UploadFile while FastAPI re-exports its own subclass.
     is_upload = isinstance(image, (UploadFile, StarletteUploadFile))
     if not isinstance(plate_number, str) or not is_upload:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=INVALID_MULTIPART_PAYLOAD)
@@ -120,20 +121,19 @@ def _normalize_plate_number(plate_number: str) -> str:
 
 def _verify_webhook_auth(
     auth_mode: str,
-    webhook_shared_secret: str,
     raw_body: bytes,
     x_webhook_token: str | None,
     x_webhook_timestamp: str | None,
     x_webhook_signature: str | None,
 ) -> None:
     if auth_mode == "token":
-        _verify_webhook_token(x_webhook_token, webhook_shared_secret)
+        _verify_webhook_token(x_webhook_token)
         return
     _verify_webhook_hmac(raw_body, x_webhook_timestamp, x_webhook_signature)
 
 
-async def _save_image_async(image: UploadFile, max_image_bytes: int | None = None) -> str:
-    safe_max_image_bytes = max_image_bytes if max_image_bytes is not None else get_settings().webhook_max_image_bytes
+async def _save_image_async(image: UploadFile) -> str:
+    settings = get_settings()
     content_type = (image.content_type or "").lower()
     if content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported image content type")
@@ -141,7 +141,7 @@ async def _save_image_async(image: UploadFile, max_image_bytes: int | None = Non
     content = await image.read()
     if not content:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty image payload")
-    if len(content) > safe_max_image_bytes:
+    if len(content) > settings.webhook_max_image_bytes:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image payload is too large")
 
     original_suffix = Path(image.filename or "upload.bin").suffix.lower()
@@ -252,7 +252,6 @@ async def handle_anpr_webhook(
     plate_number, image = _extract_plate_and_image(form)
     _verify_webhook_auth(
         settings.webhook_auth_mode,
-        settings.webhook_shared_secret,
         raw_body,
         x_webhook_token,
         x_webhook_timestamp,
@@ -264,7 +263,7 @@ async def handle_anpr_webhook(
     if not is_new_event:
         return await _handle_duplicate_event(db, event_key, clean_plate)
 
-    image_path = await _save_image_async(image, settings.webhook_max_image_bytes)
+    image_path = await _save_image_async(image)
     mark_webhook_received()
     logger.info('Webhook received for plate {}', clean_plate)
 
