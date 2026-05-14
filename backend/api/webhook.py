@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hmac
 import hashlib
+import re
 from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,6 +11,7 @@ from typing import cast
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, UploadFile, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.datastructures import UploadFile as StarletteUploadFile
 
 from core.config import get_settings
 from core.database import get_db
@@ -33,10 +35,13 @@ ALLOWED_IMAGE_CONTENT_TYPES = {
 
 INVALID_WEBHOOK_SIGNATURE = "Invalid webhook signature"
 INVALID_MULTIPART_PAYLOAD = "Invalid multipart payload"
+EVENT_KEY_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
+SHA256_HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
-def _verify_webhook_token(token: str | None, expected: str) -> None:
-    if token is None or not hmac.compare_digest(token, expected):
+def _verify_webhook_token(token: str | None, expected: str | None = None) -> None:
+    safe_expected = expected or get_settings().webhook_shared_secret
+    if token is None or not hmac.compare_digest(token, safe_expected):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook token")
 
 
@@ -70,9 +75,10 @@ def _build_webhook_signature(secret: str, timestamp_header: str, raw_body: bytes
 
 
 def _normalize_signature(signature_header: str) -> str:
-    if signature_header.startswith("sha256="):
-        return signature_header.split("=", 1)[1]
-    return signature_header
+    normalized = signature_header.split("=", 1)[1] if signature_header.startswith("sha256=") else signature_header
+    if not SHA256_HEX_PATTERN.fullmatch(normalized):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_WEBHOOK_SIGNATURE)
+    return normalized
 
 
 def _verify_webhook_hmac(
@@ -94,7 +100,7 @@ def _verify_webhook_hmac(
 
 
 def _extract_event_key(raw_body: bytes, event_id_header: str | None) -> str:
-    if event_id_header:
+    if event_id_header and EVENT_KEY_PATTERN.fullmatch(event_id_header):
         return event_id_header
     return hashlib.sha256(raw_body).hexdigest()
 
@@ -102,7 +108,7 @@ def _extract_event_key(raw_body: bytes, event_id_header: str | None) -> str:
 def _extract_plate_and_image(form: Mapping[str, object]) -> tuple[str, UploadFile]:
     plate_number = form.get("plate_number") or form.get("plateNumber")
     image = form.get("image") or form.get("plateImage")
-    is_upload = isinstance(image, UploadFile) or (hasattr(image, "filename") and hasattr(image, "read"))
+    is_upload = isinstance(image, (UploadFile, StarletteUploadFile))
     if not isinstance(plate_number, str) or not is_upload:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=INVALID_MULTIPART_PAYLOAD)
     return plate_number, cast(UploadFile, image)
@@ -126,7 +132,8 @@ def _verify_webhook_auth(
     _verify_webhook_hmac(raw_body, x_webhook_timestamp, x_webhook_signature)
 
 
-async def _save_image_async(image: UploadFile, max_image_bytes: int) -> str:
+async def _save_image_async(image: UploadFile, max_image_bytes: int | None = None) -> str:
+    safe_max_image_bytes = max_image_bytes if max_image_bytes is not None else get_settings().webhook_max_image_bytes
     content_type = (image.content_type or "").lower()
     if content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported image content type")
@@ -134,7 +141,7 @@ async def _save_image_async(image: UploadFile, max_image_bytes: int) -> str:
     content = await image.read()
     if not content:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty image payload")
-    if len(content) > max_image_bytes:
+    if len(content) > safe_max_image_bytes:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image payload is too large")
 
     original_suffix = Path(image.filename or "upload.bin").suffix.lower()
