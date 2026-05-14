@@ -161,6 +161,18 @@ Frontend coverage thresholds (Vitest):
 - Set strong values for `SECRET_KEY`, `ADMIN_PASSWORD`, `WEBHOOK_SHARED_SECRET`.
 - In non-development environments (`APP_ENV` not `development/local/test/dev`), backend refuses to start with `change-me` secrets.
 
+## Webhook Authentication
+
+The backend supports three webhook authentication modes controlled by `WEBHOOK_AUTH_MODE`:
+
+- `token` — validates the `X-Webhook-Token` header against `WEBHOOK_SHARED_SECRET`
+- `hmac` — validates `X-Webhook-Timestamp` and `X-Webhook-Signature` using `WEBHOOK_HMAC_SECRET`
+- `basic` — validates HTTP `Authorization: Basic ...` using:
+  - `WEBHOOK_BASIC_USERNAME`
+  - `WEBHOOK_BASIC_PASSWORD`
+
+For Dahua ITSAPI event notifications, `basic` mode may be the preferred option if the camera sends webhook requests via HTTP Basic Auth instead of a custom token header.
+
 ## Media Upload Limits
 
 - Allowed webhook image content types: `image/jpeg`, `image/png`, `image/webp`.
