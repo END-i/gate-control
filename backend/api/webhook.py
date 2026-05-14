@@ -38,7 +38,9 @@ INVALID_PLATE_NUMBER = "Invalid plate number"
 # Restrict header-supplied event keys to a bounded safe character set before storing them.
 EVENT_KEY_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 SHA256_HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
+# Plate numbers are normalized to uppercase before validation, so lowercase letters are intentionally excluded here.
 PLATE_NUMBER_PATTERN = re.compile(r"^[A-Z0-9-]{3,32}$")
+AnyUploadFile = UploadFile | StarletteUploadFile
 
 
 def _verify_webhook_token(token: str | None) -> None:
@@ -111,7 +113,7 @@ def _extract_plate_and_image(form: FormData) -> tuple[str, UploadFile]:
     plate_number = form.get("plate_number") or form.get("plateNumber")
     image = form.get("image") or form.get("plateImage")
     # `request.form()` may surface Starlette's UploadFile while FastAPI re-exports its own subclass.
-    is_upload = isinstance(image, (UploadFile, StarletteUploadFile))
+    is_upload = isinstance(image, AnyUploadFile)
     if not isinstance(plate_number, str) or not is_upload:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=INVALID_MULTIPART_PAYLOAD)
     return plate_number, cast(UploadFile, image)
