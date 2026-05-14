@@ -5,6 +5,7 @@ import hashlib
 from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, UploadFile, status
 from loguru import logger
@@ -104,7 +105,7 @@ def _extract_plate_and_image(form: Mapping[str, object]) -> tuple[str, UploadFil
     is_upload = isinstance(image, UploadFile) or (hasattr(image, "filename") and hasattr(image, "read"))
     if not isinstance(plate_number, str) or not is_upload:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=INVALID_MULTIPART_PAYLOAD)
-    return plate_number, image
+    return plate_number, cast(UploadFile, image)
 
 
 def _normalize_plate_number(plate_number: str) -> str:
