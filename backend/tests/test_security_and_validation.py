@@ -89,6 +89,20 @@ def test_webhook_rejects_too_large_image_payload(client, monkeypatch):
     assert response.json()['detail'] == 'Image payload is too large'
 
 
+def test_webhook_rejects_invalid_plate_number(client, monkeypatch):
+    monkeypatch.setenv('WEBHOOK_AUTH_MODE', 'token')
+
+    response = client.post(
+        '/api/webhook/anpr',
+        data={'plate_number': 'AA1234<script>'},
+        files={'image': ('sample.jpg', b'data', 'image/jpeg')},
+        headers={'X-Webhook-Token': 'webhook-secret'},
+    )
+
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'Invalid plate number'
+
+
 def test_cors_allows_localhost_ports(client):
     response = client.options(
         '/api/auth/login',

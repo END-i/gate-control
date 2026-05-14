@@ -34,9 +34,11 @@ ALLOWED_IMAGE_CONTENT_TYPES = {
 
 INVALID_WEBHOOK_SIGNATURE = "Invalid webhook signature"
 INVALID_MULTIPART_PAYLOAD = "Invalid multipart payload"
+INVALID_PLATE_NUMBER = "Invalid plate number"
 # Restrict header-supplied event keys to a bounded safe character set before storing them.
 EVENT_KEY_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 SHA256_HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
+PLATE_NUMBER_PATTERN = re.compile(r"^[A-Z0-9-]{3,32}$")
 
 
 def _verify_webhook_token(token: str | None) -> None:
@@ -116,7 +118,10 @@ def _extract_plate_and_image(form: FormData) -> tuple[str, UploadFile]:
 
 
 def _normalize_plate_number(plate_number: str) -> str:
-    return plate_number.replace(" ", "").upper()
+    normalized = plate_number.replace(" ", "").upper()
+    if not PLATE_NUMBER_PATTERN.fullmatch(normalized):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=INVALID_PLATE_NUMBER)
+    return normalized
 
 
 def _verify_webhook_auth(

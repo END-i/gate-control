@@ -37,6 +37,7 @@ The refactor extracted focused helpers for:
 - event key extraction
 - multipart payload extraction
 - plate normalization
+- plate input validation
 - webhook auth dispatch
 - duplicate event handling
 - access log creation
