@@ -1,15 +1,20 @@
-# Unused Variables, Dead Code, and Redundant Dependency Audit
+# Unused Variables, Dead Code, and Redundant Dependency Audit (re-run)
 
 ## Scope
 
-Repository: `/home/runner/work/gate-control/gate-control`
+Repository: `/home/runner/work/gate-control/gate-control`  
+Re-run against latest branch state at commit `d1bc72d`.
 
-Audit inputs:
-- Python source scan across `backend/**/*.py`
-- Frontend/package manifest review across `frontend/package.json` and `frontend/src/**/*`
-- Dependency-reference checks against:
+Inputs used:
+- static Python AST scan of `backend/**/*.py` for assigned-vs-read local variables
+- dependency/reference scan for:
   - `/home/runner/work/gate-control/gate-control/backend/requirements.txt`
   - `/home/runner/work/gate-control/gate-control/frontend/package.json`
+- dead-code/reference checks in frontend source, especially `$lib` exports
+
+Validation attempt:
+- Ran `/home/runner/work/gate-control/gate-control/scripts/check-all.sh`
+- Current environment lacks `ruff` (`/usr/bin/python3: No module named ruff`), so full lint/test flow did not complete here.
 
 ---
 
@@ -17,12 +22,12 @@ Audit inputs:
 
 ### Confirmed
 
-- No confirmed unused local variables were found in backend Python source during static scan.
+- No confirmed unused local variables found in `backend/**/*.py` during AST scan.
 
 ### Notes
 
-- This finding is based on an AST-based assignment/read pass across `backend/**/*.py`.
-- Existing repository lint flow (`ruff`) is also configured in `/home/runner/work/gate-control/gate-control/scripts/check-all.sh` and is the canonical way to catch unused imports/locals in backend code.
+- Canonical lint path remains `/home/runner/work/gate-control/gate-control/scripts/check-all.sh`, which includes backend `ruff` checks.
+- In this environment, `ruff` is not installed, so this report relies on static scan + manual review evidence.
 
 ---
 
@@ -30,14 +35,15 @@ Audit inputs:
 
 ### Confirmed
 
-1. **Unused placeholder module**
+1. **Unused frontend placeholder file**
    - File: `/home/runner/work/gate-control/gate-control/frontend/src/lib/index.ts`
-   - Contents are only a template comment, and there are no imports referencing `$lib/index` in `frontend/src`.
-   - Recommendation: remove the file if not needed, or export shared symbols from it and consume them to justify keeping it.
+   - File contains only template comment text.
+   - No `$lib/index` (or direct `$lib`) imports found in `frontend/src`.
+   - Recommendation: remove file if not intended for near-term exports.
 
-### Candidate (manual verification recommended)
+### No additional high-confidence dead code found
 
-- No other backend API handlers or core functions were marked as dead code with high confidence, because route handlers/middleware are often referenced by decorators/runtime wiring rather than direct symbol calls.
+- Backend route handlers and helpers are mostly wired by decorators/runtime, so absence of direct symbol references is not sufficient to mark them dead without deeper runtime trace data.
 
 ---
 
@@ -45,39 +51,26 @@ Audit inputs:
 
 ### Strong candidate
 
-1. **`bcrypt==4.0.1` in backend requirements may be redundant**
-   - Declared in `/home/runner/work/gate-control/gate-control/backend/requirements.txt` (line 9)
-   - `passlib[bcrypt]==1.7.4` is also declared (line 8) and already pulls bcrypt support.
-   - No direct `import bcrypt` references were found in backend Python files.
-   - Recommendation: test removing explicit `bcrypt` pin; keep only if you intentionally pin transitive bcrypt separately for security/compliance control.
+1. **`bcrypt==4.0.1` may be redundant in backend**
+   - Declared in `/home/runner/work/gate-control/gate-control/backend/requirements.txt` line 9.
+   - `passlib[bcrypt]==1.7.4` is also declared (line 8).
+   - No direct `import bcrypt` found in backend Python files.
+   - Recommendation: remove explicit `bcrypt` only if your policy does not require pinning transitive security-sensitive packages separately.
 
-### Not redundant (despite no direct imports)
+### Explicitly not redundant (even if no direct import)
 
-These may appear as “no direct import” but are required by runtime/configuration/tooling:
-
-- `uvicorn` — used by runtime startup commands:
+- **`uvicorn`**: used as runtime entrypoint in:
   - `/home/runner/work/gate-control/gate-control/backend/Dockerfile` line 21
   - `/home/runner/work/gate-control/gate-control/scripts/run-backend.sh` line 28
-- `asyncpg` and `aiosqlite` — required by configured SQLAlchemy database URLs:
-  - `/home/runner/work/gate-control/gate-control/.env.example` line 4
-  - `/home/runner/work/gate-control/gate-control/backend/tests/conftest.py` lines 9, 38
-- `python-multipart` — needed for multipart webhook form handling in FastAPI (even without direct import):
-  - multipart webhook endpoint in `/home/runner/work/gate-control/gate-control/backend/api/webhook.py`
-
-### Frontend candidate
-
-1. **`@vitest/coverage-v8` may be currently unused**
-   - Declared in `/home/runner/work/gate-control/gate-control/frontend/package.json` line 27
-   - No coverage script exists in the same file (`scripts` section has no `--coverage`)
-   - Recommendation: remove if coverage is not used in CI/local workflow, or add an explicit `test:coverage` script to make usage intentional.
+- **`python-multipart`**: required by FastAPI multipart form parsing used in webhook endpoint (`/home/runner/work/gate-control/gate-control/backend/api/webhook.py`).
+- **`asyncpg` / `aiosqlite`**: both are used via SQLAlchemy connection URLs in environment/test paths (e.g. `/home/runner/work/gate-control/gate-control/backend/tests/conftest.py` lines 9 and 38).
+- **`@vitest/coverage-v8`**: currently used with Vitest coverage provider (`provider: 'v8'`) in `/home/runner/work/gate-control/gate-control/frontend/vitest.config.ts` lines 13-15.
 
 ---
 
-## Suggested cleanup order
+## Recommended follow-up
 
-1. Remove/justify `frontend/src/lib/index.ts`.
-2. Trial removal of explicit `bcrypt` from backend requirements and run full backend validation.
-3. Decide whether `@vitest/coverage-v8` should be removed or activated via a coverage script.
-4. Re-run repository checks:
+1. Remove `frontend/src/lib/index.ts` if no imminent `$lib` exports are planned.
+2. Trial removal of backend explicit `bcrypt` pin, then run full checks in a provisioned environment:
    - `/home/runner/work/gate-control/gate-control/scripts/check-all.sh`
-
+3. Keep `@vitest/coverage-v8` (it is actively referenced by Vitest config).
