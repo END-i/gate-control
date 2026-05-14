@@ -38,6 +38,7 @@
 		"hls.js": "^1.6.16",
 		"svelte-i18n": "^4.0.1"
 	},
+	"packageManager": "pnpm@9.15.9",
 	"pnpm": {
 		"overrides": {
 			"esbuild": ">=0.25.0",
