@@ -6,6 +6,7 @@ import pytest
 from fastapi import HTTPException
 
 from api.webhook import _verify_webhook_hmac
+from tests.helpers import TINY_JPEG_BYTES, build_multipart_webhook_body
 
 
 def _build_signature(secret: str, timestamp: str, raw_body: bytes) -> str:
@@ -54,7 +55,7 @@ def test_webhook_token_mode_works(client, monkeypatch):
     response = client.post(
         '/api/webhook/anpr',
         data={'plate_number': 'AA1234BB'},
-        files={'image': ('sample.jpg', b'data', 'image/jpeg')},
+        files={'image': ('sample.jpg', TINY_JPEG_BYTES, 'image/jpeg')},
         headers={'X-Webhook-Token': 'webhook-secret'},
     )
 
@@ -67,7 +68,7 @@ def test_webhook_hmac_mode_enforced(client, monkeypatch):
     response = client.post(
         '/api/webhook/anpr',
         data={'plate_number': 'AA1234BB'},
-        files={'image': ('sample.jpg', b'data', 'image/jpeg')},
+        files={'image': ('sample.jpg', TINY_JPEG_BYTES, 'image/jpeg')},
         headers={'X-Webhook-Token': 'webhook-secret'},
     )
 
@@ -79,16 +80,7 @@ def test_webhook_hmac_mode_valid_signature(client, monkeypatch):
 
     timestamp = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
     boundary = 'X-BOUNDARY-12345'
-    body = (
-        f'--{boundary}\r\n'
-        'Content-Disposition: form-data; name="plate_number"\r\n\r\n'
-        'AA1234BB\r\n'
-        f'--{boundary}\r\n'
-        'Content-Disposition: form-data; name="image"; filename="sample.jpg"\r\n'
-        'Content-Type: image/jpeg\r\n\r\n'
-        'data\r\n'
-        f'--{boundary}--\r\n'
-    ).encode('utf-8')
+    body = build_multipart_webhook_body(boundary=boundary, plate='AA1234BB')
     signature = _build_signature('hmac-secret', timestamp, body)
 
     response = client.post(
@@ -115,7 +107,7 @@ def test_webhook_duplicate_event_id_skips_processing(client, monkeypatch):
         'plate_number': 'AA1234BB',
     }
     files = {
-        'image': ('sample.jpg', b'data', 'image/jpeg'),
+        'image': ('sample.jpg', TINY_JPEG_BYTES, 'image/jpeg'),
     }
 
     first = client.post('/api/webhook/anpr', data=payload, files=files, headers=headers)

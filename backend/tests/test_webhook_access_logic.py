@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from tests.helpers import TINY_JPEG_BYTES
+
 
 def _auth_headers(client) -> dict[str, str]:
     response = client.post('/api/auth/login', json={'username': 'admin', 'password': 'admin'})
@@ -21,7 +23,7 @@ def test_webhook_opens_gate_for_allowed_vehicle(client, monkeypatch):
     webhook_response = client.post(
         '/api/webhook/anpr',
         data={'plate_number': 'AA1234BB'},
-        files={'image': ('sample.jpg', b'data', 'image/jpeg')},
+        files={'image': ('sample.jpg', TINY_JPEG_BYTES, 'image/jpeg')},
         headers={'X-Webhook-Token': 'webhook-secret', 'X-Event-Id': 'evt-allowed-1'},
     )
 
@@ -44,7 +46,7 @@ def test_webhook_denies_blocked_vehicle_and_does_not_trigger_relay(client, monke
     webhook_response = client.post(
         '/api/webhook/anpr',
         data={'plate_number': 'CC5678DD'},
-        files={'image': ('sample.jpg', b'data', 'image/jpeg')},
+        files={'image': ('sample.jpg', TINY_JPEG_BYTES, 'image/jpeg')},
         headers={'X-Webhook-Token': 'webhook-secret', 'X-Event-Id': 'evt-blocked-1'},
     )
 
@@ -68,7 +70,7 @@ def test_webhook_accepts_dahua_camelcase_field_names(client, monkeypatch):
     webhook_response = client.post(
         '/api/webhook/anpr',
         data={'plateNumber': 'ITC413AA'},
-        files={'plateImage': ('plate.jpg', b'data', 'image/jpeg')},
+        files={'plateImage': ('plate.jpg', TINY_JPEG_BYTES, 'image/jpeg')},
         headers={'X-Webhook-Token': 'webhook-secret', 'X-Event-Id': 'evt-dahua-1'},
     )
 

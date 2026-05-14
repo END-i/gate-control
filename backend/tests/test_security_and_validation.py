@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from main import _validate_runtime_secrets, settings
+from tests.helpers import TINY_JPEG_BYTES
 
 
 def get_auth_headers(client):
@@ -95,7 +96,7 @@ def test_webhook_rejects_invalid_plate_number(client, monkeypatch):
     response = client.post(
         '/api/webhook/anpr',
         data={'plate_number': 'AA1234<script>'},
-        files={'image': ('sample.jpg', b'data', 'image/jpeg')},
+        files={'image': ('sample.jpg', TINY_JPEG_BYTES, 'image/jpeg')},
         headers={'X-Webhook-Token': 'webhook-secret'},
     )
 
