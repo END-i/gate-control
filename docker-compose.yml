@@ -64,7 +64,69 @@ services:
     profiles:
       - s3
 
+  # ---------------------------------------------------------------------------
+  # Monitoring stack — Prometheus + Grafana
+  # Start with: docker compose --profile monitoring up
+  # Grafana: http://localhost:3100  (admin / admin by default)
+  # Prometheus: http://localhost:9090
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      - backend
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3100}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3100}:3000"
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+  # ---------------------------------------------------------------------------
+  # Camera RTSP → HLS proxy — mediamtx (optional)
+  # Start with: docker compose --profile streaming up
+  # HLS stream: http://localhost:8888/camera/index.m3u8
+  # Set CAMERA_RTSP_URL in .env to your camera RTSP URL.
+  # Leave CAMERA_RTSP_URL=disabled (default) to skip this service.
+  # ---------------------------------------------------------------------------
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    restart: unless-stopped
+    environment:
+      MTX_PATHS_CAMERA_SOURCE: ${CAMERA_RTSP_URL:-disabled}
+    ports:
+      - "${MTX_RTSP_PORT:-8554}:8554"
+      - "${MTX_HLS_PORT:-8888}:8888"
+    profiles:
+      - streaming
+
 volumes:
   postgres_data:
   media_data:
   minio_data:
+  prometheus_data:
+  grafana_data:

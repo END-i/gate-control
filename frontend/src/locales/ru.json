@@ -14,8 +14,7 @@
     "subtitle": "Контроль ворот",
     "dashboard": "Панель",
     "vehicles": "Автомобили",
-    "logs": "Логи",
-    "manualTrigger": "Ручной триггер",
+    "logs": "Логи",    "audit": "Журнал аудита",    "manualTrigger": "Ручной триггер",
     "gateOpened": "Ворота открыты",
     "triggerFailed": "Ошибка реле",
     "systemOnline": "Система онлайн",
@@ -29,11 +28,22 @@
     "signingIn": "Вход...",
     "failed": "Ошибка входа"
   },
+  "ticker": {
+    "title": "События в реальном времени",
+    "live": "поток",
+    "connecting": "подключение",
+    "waiting": "Ожидаем события…",
+    "allowed": "разрешен",
+    "denied": "запрещен",
+    "connectFailed": "Не удалось подключиться к потоку"
+  },
   "dashboard": {
     "title": "Панель",
     "totalVehicles": "Всего авто",
     "todayAccesses": "Проходов сегодня",
     "todayDenied": "Отказов сегодня",
+    "activeSubscriptions": "Активных подписок",
+    "expiringSoon": "Истекают (7 дн)",
     "failed": "Не удалось загрузить статистику"
   },
   "vehicles": {
@@ -52,7 +62,18 @@
     "plateValidation": "Номер должен содержать 3-12 символов A-Z или цифр",
     "emptyOwner": "-",
     "allowed": "разрешен",
-    "blocked": "запрещен"
+    "blocked": "запрещен",
+    "validFrom": "Действует с",
+    "validUntil": "Действует до",
+    "permanent": "Постоянный",
+    "active": "Активный",
+    "expired": "Истёк",
+    "expiringSoon": "Истекает",
+    "filter_all": "Все",
+    "filter_active": "Активные",
+    "filter_expiring_soon": "Истекают",
+    "filter_expired": "Просроченные",
+    "filter_permanent": "Постоянные"
   },
   "logs": {
     "title": "Логи доступа",
@@ -73,5 +94,18 @@
     "close": "Закрыть",
     "alt": "Снимок доступа",
     "closeLabel": "Закрыть окно изображения"
+  },
+  "audit": {
+    "title": "Журнал аудита",
+    "eventType": "Тип события",
+    "actor": "Актор",
+    "time": "Время",
+    "result": "Результат",
+    "details": "Детали",
+    "ok": "ок",
+    "fail": "ошибка",
+    "empty": "Событий не найдено",
+    "failed": "Не удалось загрузить журнал",
+    "clearFilters": "Очистить"
   }
 }

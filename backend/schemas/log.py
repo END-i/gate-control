@@ -11,6 +11,8 @@ class AccessLogRead(BaseModel):
     timestamp: datetime
     access_granted: bool
     image_path: str | None
+    action_type: str | None = None
+    admin_id: int | None = None
 
     model_config = {"from_attributes": True}
 

@@ -17,11 +17,15 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_
 from api.router import api_router
 from core.cleanup import run_cleanup_service
 from core.config import get_settings
-from core.database import init_db
+from core.database import init_db, SessionLocal
 from core.logging_config import configure_logging
+from core.prom_metrics import DB_POOL_CHECKED_OUT, DB_POOL_OVERFLOW, DB_POOL_SIZE, WEBHOOK_DUPLICATE_TOTAL  # noqa: F401 – re-exported for tests
 from core.relay_worker import run_relay_worker
 from core.secrets import prefetch_secrets
 from core.seed import seed_initial_admin
+from core.occupancy import occupancy_tracker
+from core.shutdown import install_signal_handlers
+from core.subscription_worker import run_subscription_expiry_worker
 
 # Prefetch secrets from Vault (no-op when VAULT_ADDR is not set) so that
 # pydantic-settings picks them up via os.environ before the first get_settings()
@@ -31,6 +35,7 @@ prefetch_secrets()
 settings = get_settings()
 cleanup_task: Optional[asyncio.Task[None]] = None
 relay_worker_task: Optional[asyncio.Task[None]] = None
+subscription_worker_task: Optional[asyncio.Task[None]] = None
 MEDIA_DIR = Path(__file__).resolve().parent / "media"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 HTTP_REQUESTS_TOTAL = Counter(
@@ -79,16 +84,20 @@ def _localhost_origin_regex(frontend_url: str) -> Optional[str]:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    global cleanup_task, relay_worker_task
+    global cleanup_task, relay_worker_task, subscription_worker_task
     configure_logging()
     _validate_runtime_secrets()
+    install_signal_handlers()
     logger.info("Starting ANPR backend")
     skip_startup_tasks = os.getenv("ANPR_SKIP_STARTUP_TASKS") == "1"
     if not skip_startup_tasks:
         await init_db()
         await seed_initial_admin()
+        async with SessionLocal() as _db:
+            await occupancy_tracker.load_from_db(_db)
         cleanup_task = asyncio.create_task(run_cleanup_service(days=30, interval_hours=24))
         relay_worker_task = asyncio.create_task(run_relay_worker())
+        subscription_worker_task = asyncio.create_task(run_subscription_expiry_worker())
     try:
         yield
     finally:
@@ -99,6 +108,13 @@ async def lifespan(_: FastAPI):
             except asyncio.CancelledError:
                 pass
             relay_worker_task = None
+        if subscription_worker_task is not None:
+            subscription_worker_task.cancel()
+            try:
+                await subscription_worker_task
+            except asyncio.CancelledError:
+                pass
+            subscription_worker_task = None
         if cleanup_task is not None:
             cleanup_task.cancel()
             try:
@@ -111,14 +127,24 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="ANPR Gate Control API", lifespan=lifespan)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[settings.frontend_url],
-    allow_origin_regex=_localhost_origin_regex(settings.frontend_url),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+if settings.cors_allow_all_origins:
+    # LAN / Windows deployment: allow all origins (no credentials cookie support).
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[settings.frontend_url],
+        allow_origin_regex=_localhost_origin_regex(settings.frontend_url),
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
@@ -168,4 +194,15 @@ async def metrics(
         or not hmac.compare_digest(x_metrics_token, api_key)
     ):
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Refresh DB connection-pool gauges from the live engine stats.
+    from core.database import engine  # local import avoids circular dependency at module level
+    pool = engine.pool
+    try:
+        DB_POOL_SIZE.set(pool.size())
+        DB_POOL_CHECKED_OUT.set(pool.checkedout())
+        DB_POOL_OVERFLOW.set(pool.overflow())
+    except Exception:  # noqa: BLE001 — NullPool etc. may not expose these methods
+        pass
+
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)

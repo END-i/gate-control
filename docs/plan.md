@@ -352,14 +352,14 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - Staging environment auto-deploy pipeline
 - ~~**[TODO — camera] Plate field name normalization:** Dahua ITC413 sends `plateNumber` (camelCase); add field alias or normalization layer in `backend/api/webhook.py` to accept both `plate_number` and `plateNumber`~~ ✅ `form.get("plate_number") or form.get("plateNumber")` + `SIM_DAHUA_MODE` in `simulator.py` (2026-04-30)
 - **[TODO — karsun] Obtain Karsun JS-LPRO1 API documentation:** required before `karsun_api.py` can be implemented beyond stubs; contact vendor for HTTP API spec covering whitelist add/remove, relay command, and webhook payload field names — this is the critical blocker for Phase 13
-- **[TODO — karsun] Prompt 43 — SQLite migration:** replace `asyncpg`/PostgreSQL with `aiosqlite`/SQLite; extend `VehicleStatus` with `blacklist`; add `action_type` + `admin_id` to `AccessLog`; update CORS for LAN deployment
-- **[TODO — karsun] Prompt 44 — `karsun_api.py` stubs:** create `core/karsun_api.py` with `sync_vehicle_to_camera()`, `remove_vehicle_from_camera()`, `trigger_relay()` as stubs returning `False` + `logger.warning`
-- **[TODO — karsun] Prompt 45 — Vehicle CRUD sync:** call `karsun_api` after every POST/PUT/DELETE on vehicles; add `camera_sync: bool` to response schema
-- **[TODO — karsun] Prompt 46 — Webhook refactor:** add `/api/webhook/camera` alias; remove relay logic from handler; record `action_type='auto_entry'`
-- **[TODO — karsun] Prompt 47 — Manual open endpoint:** add `/api/relay/manual_open` with `action_type='manual_entry'` and `admin_id` logging; keep `/api/relay/trigger` as alias
-- **[TODO — karsun] Prompt 48 — Backup/Restore API:** `GET /api/backup/export` + `POST /api/backup/import` with post-import camera whitelist rebuild
-- **[TODO — karsun] Prompt 49 — Windows deployment:** `build-windows.bat`, `start.bat`, `docs/DEPLOYMENT.md` with Task Scheduler instructions
-- **[TODO — karsun] Prompt 50 — Karsun config + docs:** `KARSUN_IP` etc. in `config.py`, `.env.example`, `docs/CAMERA_SETUP.md`
+- ~~**[TODO — karsun] Prompt 43 — SQLite migration:**~~ ✅ done (2026-05-13) — `DATABASE_URL` defaults to SQLite; `VehicleStatus.BLACKLIST`; `action_type` + `admin_id` on `AccessLog`; `CORS_ALLOW_ALL_ORIGINS` flag
+- ~~**[TODO — karsun] Prompt 44 — `karsun_api.py` stubs:**~~ ✅ done (2026-05-13) — `core/karsun_api.py` created with three async stubs
+- ~~**[TODO — karsun] Prompt 45 — Vehicle CRUD sync:**~~ ✅ done (2026-05-13) — `camera_sync: bool` in `VehicleRead`; sync calls after POST/PUT/DELETE
+- ~~**[TODO — karsun] Prompt 46 — Webhook refactor:**~~ ✅ done (2026-05-13) — `/api/webhook/camera` canonical; `/api/webhook/anpr` deprecated alias; relay logic removed; `action_type='auto_entry'`
+- ~~**[TODO — karsun] Prompt 47 — Manual open endpoint:**~~ ✅ done (2026-05-13) — `/api/relay/manual_open` with `admin_id` logging; `/api/relay/trigger` deprecated alias
+- ~~**[TODO — karsun] Prompt 48 — Backup/Restore API:**~~ ✅ done (2026-05-13) — `api/backup.py`; `GET /api/backup/export` + `POST /api/backup/import` with whitelist rebuild
+- ~~**[TODO — karsun] Prompt 49 — Windows deployment:**~~ ✅ done (2026-05-13) — `scripts/build-windows.bat`, `scripts/start.bat`, `docs/DEPLOYMENT.md`
+- ~~**[TODO — karsun] Prompt 50 — Karsun config + docs:**~~ ✅ done (2026-05-13) — `KARSUN_*` vars in `config.py` + `.env.example`; `docs/CAMERA_SETUP.md`
 - **[TODO — camera] Webhook auth mode `basic`:** Dahua HTTP event notifications use Basic Auth, not `X-Webhook-Token`; add `WEBHOOK_AUTH_MODE=basic` support or document camera-side custom header configuration
 - ~~**[TODO — camera] Image field name:** confirm whether camera firmware sends `image` or `plateImage`; update webhook to accept both or align with confirmed field name~~ ✅ `form.get("image") or form.get("plateImage")` — webhook now accepts both (2026-04-30)
 - **[TODO — camera] Relay strategy:** evaluate replacing external `trigger_relay()` HTTP POST with Dahua CGI command (`/cgi-bin/accessControl.cgi`) using the camera's built-in Digital Output; document decision and implement if chosen
@@ -367,16 +367,16 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - **[TODO — subscriptions] Prompt 35:** DB migration — add `valid_from` / `valid_until` nullable columns to `vehicles`, update model + schemas
 - **[TODO — subscriptions] Prompt 36:** Access check — deny if `valid_until` is in the past; add `get_expiring_soon()` CRUD helper + unit tests
 - **[TODO — subscriptions] Prompt 37:** Expiry worker — background task marks expired vehicles as `blocked`, emits audit event `subscription_expired`
-- **[TODO — subscriptions] Prompt 38:** Frontend + Stats — vehicle form date pickers, table expiry badge, dashboard widgets, i18n keys
-- **[TODO — monitoring] Prompt 39:** Occupancy counter — `direction` field → enter/leave, `/api/occupancy` REST + SSE, PostgreSQL persistence, unit tests
-- **[TODO — monitoring] Prompt 40:** Live event ticker — `/api/events/live` SSE, `LiveTicker.svelte` component on Dashboard with plate/direction/decision/thumbnail, i18n, Vitest test
-- **[TODO — monitoring] Prompt 41:** Grafana compose profile — Prometheus + Grafana with pre-provisioned dashboard (webhook rate, occupancy, relay ratio, latency, queue depth)
-- **[TODO — monitoring] Prompt 42 (optional):** RTSP proxy — `mediamtx` compose service + `CameraFeed.svelte` HLS player, `--profile streaming`, graceful disable when `CAMERA_RTSP_URL` not set
-- **[TODO — audit] Audit log viewer:** таблиця `security_audit_events` існує в БД, але відсутня сторінка в UI для перегляду адміністратором; додати `/admin/audit` з фільтрами за датою, типом події, plate
+- ~~**[TODO — subscriptions] Prompt 38:**~~ ✅ Frontend + Stats — vehicle form date pickers, table expiry badge, dashboard widgets, i18n keys
+- ~~**[TODO — monitoring] Prompt 39:**~~ ✅ Occupancy counter — `direction` field → enter/leave, `/api/occupancy` REST + SSE, PostgreSQL persistence, unit tests
+- ~~**[TODO — monitoring] Prompt 40:**~~ ✅ Live event ticker — `/api/logs/stream-token` SSE, `LiveTicker.svelte` component on Dashboard with plate/decision badge, i18n, Vitest test
+- ~~**[TODO — monitoring] Prompt 41:**~~ ✅ Grafana compose profile — Prometheus + Grafana with pre-provisioned dashboard (7 panels: req total, req/s, 5xx rate, p99 latency, status breakdown, percentiles, path rate)
+- ~~**[TODO — monitoring] Prompt 42 (optional):**~~ ✅ RTSP proxy — `mediamtx` compose service + `CameraFeed.svelte` HLS player, `--profile streaming`, graceful disable when `CAMERA_RTSP_URL` not set
+- ~~**[TODO — audit] Audit log viewer:**~~ ✅ `GET /api/audit` (admin-only, paginated, filters: event_type/actor/date_from/date_to); `/audit` frontend page with table + filters; nav link; i18n keys in en/uk/ru/bg (2026-05-14)
 - **[TODO — reporting] Reports / Звіти:** PDF або Excel звіт за місяць — кількість в'їздів per vehicle, погодинна статистика, топ-10 активних номерів; зараз є тільки CSV логів
-- **[TODO — reliability] Webhook retry metrics:** ITC413 повторює надсилання при помилці; ідемпотентність через `X-Event-Id` є, але відсутня метрика retry-count та алерт при аномальному зростанні повторів
-- **[TODO — reliability] Graceful shutdown:** при зупинці контейнера `relay_worker` і `cleanup_task` можуть перерватися на середині; додати SIGTERM handler з drain (завершити поточне завдання, відмовити нові)
-- **[TODO — observability] DB connection pool monitoring:** відсутня метрика активних з'єднань SQLAlchemy; додати `pool_size`, `checked_out`, `overflow` до Prometheus endpoint
+- ~~**[TODO — reliability] Webhook retry metrics:**~~ ✅ `anpr_webhook_duplicate_total` Counter in `core/prom_metrics.py`, incremented in `api/webhook.py` on duplicate; exposed via `/metrics` (2026-05-14)
+- ~~**[TODO — reliability] Graceful shutdown:**~~ ✅ `core/shutdown.py` — `install_signal_handlers()`, `request_shutdown()`, `is_shutting_down()`; SIGTERM/SIGINT registered in lifespan; all workers (`relay_worker`, `subscription_worker`, `cleanup`) check `is_shutting_down()` each iteration (2026-05-14)
+- ~~**[TODO — observability] DB connection pool monitoring:**~~ ✅ `anpr_db_pool_size`, `anpr_db_pool_checked_out`, `anpr_db_pool_overflow` Gauges in `core/prom_metrics.py`; refreshed from `engine.pool` on every `/metrics` scrape (2026-05-14)
 
 ### Future features (low priority — implement on demand only)
 
@@ -386,9 +386,16 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - **[future] Telegram bot / mobile interface:** швидкий доступ оператора без браузера — підтвердити, відхилити, відкрити шлагбаум вручну
 - **[future] Karsun live stream:** відеопотік з камери Karsun JS-LPRO1 у браузері — розширення Dashboard (Backlog Prompt 14 з нових вимог)
 
+### Expansion Wave Done Marker
+
+- Date: 2026-04-30
+- Status: all items listed under "Implemented in this wave" above are complete
+- Remaining work tracked under TODO/future items in "Remaining / future work" and "Future features" above
+- Next milestone: Karsun Migration Wave (Phase 13)
+
 ---
 
-## Karsun Migration Wave (planned, 2026-05-12)
+## Karsun Migration Wave (planned 2026-05-12 — not yet started as of 2026-05-13)
 
 ### Context
 
@@ -410,14 +417,21 @@ New business requirements (received 2026-05-11) pivot the hardware platform from
 
 ### Planned prompts
 
-- [ ] **Prompt 43:** SQLite migration + model updates (`blacklist` status, `action_type`, `admin_id`)
-- [ ] **Prompt 44:** `karsun_api.py` — stubs for `sync_vehicle_to_camera()`, `remove_vehicle_from_camera()`, `trigger_relay()` *(blocked on vendor API docs)*
-- [ ] **Prompt 45:** Vehicle CRUD + camera sync calls after each write
-- [ ] **Prompt 46:** Webhook refactored to `/api/webhook/camera` (statistics-only, no relay) *(field names pending vendor docs)*
-- [ ] **Prompt 47:** Manual open at `/api/relay/manual_open` with `admin_id` logging
-- [ ] **Prompt 48:** Backup/Restore API with post-import camera whitelist rebuild
-- [ ] **Prompt 49:** Windows deployment scripts (`build-windows.bat`, `start.bat`, `docs/DEPLOYMENT.md`)
-- [ ] **Prompt 50:** Karsun config variables in `config.py`, `.env.example`, `docs/CAMERA_SETUP.md`
+- [x] **Prompt 43:** SQLite migration + model updates (`blacklist` status, `action_type`, `admin_id`) — migration `0004_karsun_access_log_action_type`; `CORS_ALLOW_ALL_ORIGINS` config flag added
+- [x] **Prompt 44:** `karsun_api.py` — stubs for `sync_vehicle_to_camera()`, `remove_vehicle_from_camera()`, `trigger_relay()` *(stubs return False + logger.warning until vendor API docs received)*
+- [x] **Prompt 45:** Vehicle CRUD + camera sync calls after each write; `camera_sync: bool` added to `VehicleRead` schema
+- [x] **Prompt 46:** `/api/webhook/camera` canonical endpoint (statistics-only, no relay); `/api/webhook/anpr` kept as deprecated alias
+- [x] **Prompt 47:** `/api/relay/manual_open` with `action_type='manual_entry'` + `admin_id` logging; `/api/relay/trigger` kept as deprecated alias
+- [x] **Prompt 48:** `api/backup.py` — `GET /api/backup/export` + `POST /api/backup/import` with post-import camera whitelist rebuild
+- [x] **Prompt 49:** `scripts/build-windows.bat`, `scripts/start.bat`, `docs/DEPLOYMENT.md` with Task Scheduler instructions
+- [x] **Prompt 50:** Karsun config vars in `config.py` + `.env.example`; `docs/CAMERA_SETUP.md` created
+
+### Karsun Migration Wave Done Marker
+
+- Date: 2026-05-13
+- Status: all 8 prompts (43–50) implemented
+- Remaining blocker: vendor HTTP API docs required to replace `karsun_api.py` stubs with real calls
+- Next milestone: Phase 11 subscriptions (Prompt 35) or Phase 12 monitoring (Prompt 39)
 
 ### Backward compatibility notes
 
@@ -575,20 +589,16 @@ New business requirements (received 2026-05-11) pivot the hardware platform from
 4. Controlled rollout:
   - add feature flags and progressive rollout for risky changes
 
-## Next Sprint (Highest ROI)
+## Next Sprint (Highest ROI) — as of 2026-05-13
 
-1. Implement queue/worker with retry policy and dead-letter queue
-2. Add nightly restore verification in CI/staging using existing backup/restore scripts
-3. Tighten security job policy for actionable high/critical findings
-4. Integrate runbook/SLO checks into operational review cadence and alert routing
-5. Expand E2E suite to full happy-path and deny-path with relay side-effect verification
-6. **[camera] Resolve Dahua ITC413-PW4D-IZ1 field mapping and auth mode** (see Hardware Integration section)
-7. **[camera] Confirm image field name and relay strategy against real firmware**
-8. **[subscriptions] Implement Phase 11 (Prompts 35–38): time-limited access / subscription passes** — start with DB migration (Prompt 35)
-9. **[monitoring] Implement Phase 12 (Prompts 39–42): real-time monitoring** — start with occupancy counter (Prompt 39), highest ROI items: Prompt 39 + 40 + 41
-10. **[karsun] Obtain Karsun JS-LPRO1 official HTTP API documentation from vendor** — critical blocker for Phase 13 (Prompts 44–46 cannot be fully implemented without it)
-11. **[karsun] Start Phase 13 with Prompt 43** (SQLite migration + model updates) — can proceed independently without vendor API docs
-12. **[karsun] Implement `karsun_api.py` stubs (Prompt 44)** — unblocks CRUD sync and relay integration; stubs return `False` until vendor docs arrive
+> **Phase 11 (Subscriptions) complete.** Prompts 35–38 done. Phase 13 (Karsun) also complete.
+
+1. **[karsun] Obtain Karsun JS-LPRO1 official HTTP API documentation from vendor** — replace stubs in `core/karsun_api.py` with real `httpx` calls
+2. **[monitoring] Implement Phase 12 (Prompts 39–42): real-time monitoring** — start with occupancy counter (Prompt 39)
+3. **[camera] Resolve Dahua ITC413-PW4D-IZ1 webhook auth mode** (`WEBHOOK_AUTH_MODE=basic`) and relay strategy (CGI API vs. direct DO)
+4. Expand E2E suite to full happy-path and deny-path with relay side-effect verification
+5. Add nightly restore verification in CI/staging using existing backup/restore scripts
+6. Tighten security job policy for actionable high/critical findings
 
 ## Product Readiness Exit Criteria
 

@@ -15,6 +15,7 @@
     "dashboard": "Дашборд",
     "vehicles": "Авто",
     "logs": "Логи",
+    "audit": "Журнал аудиту",
     "manualTrigger": "Ручний тригер",
     "gateOpened": "Ворота відкрито",
     "triggerFailed": "Помилка реле",
@@ -29,11 +30,22 @@
     "signingIn": "Вхід...",
     "failed": "Помилка входу"
   },
+  "ticker": {
+    "title": "Події в реальному часі",
+    "live": "потік",
+    "connecting": "підключення",
+    "waiting": "Очікуємо на події…",
+    "allowed": "дозволено",
+    "denied": "заблоковано",
+    "connectFailed": "Не вдалося підключитися до потоку"
+  },
   "dashboard": {
     "title": "Дашборд",
     "totalVehicles": "Всього авто",
     "todayAccesses": "Проїздів сьогодні",
     "todayDenied": "Відмов сьогодні",
+    "activeSubscriptions": "Активних підписок",
+    "expiringSoon": "Закінчуються (7 дн)",
     "failed": "Не вдалося завантажити статистику"
   },
   "vehicles": {
@@ -52,7 +64,18 @@
     "plateValidation": "Номер має містити 3-12 символів A-Z або цифр",
     "emptyOwner": "-",
     "allowed": "дозволено",
-    "blocked": "заблоковано"
+    "blocked": "заблоковано",
+    "validFrom": "Діє з",
+    "validUntil": "Діє до",
+    "permanent": "Постійний",
+    "active": "Активний",
+    "expired": "Закінчився",
+    "expiringSoon": "Закінчується",
+    "filter_all": "Всі",
+    "filter_active": "Активні",
+    "filter_expiring_soon": "Закінчуються",
+    "filter_expired": "Прострочені",
+    "filter_permanent": "Постійні"
   },
   "logs": {
     "title": "Логи доступу",
@@ -73,5 +96,18 @@
     "close": "Закрити",
     "alt": "Знімок доступу",
     "closeLabel": "Закрити вікно зображення"
+  },
+  "audit": {
+    "title": "Журнал аудиту",
+    "eventType": "Тип події",
+    "actor": "Актор",
+    "time": "Час",
+    "result": "Результат",
+    "details": "Деталі",
+    "ok": "ок",
+    "fail": "помилка",
+    "empty": "Подій не знайдено",
+    "failed": "Не вдалося завантажити журнал",
+    "clearFilters": "Очистити"
   }
 }

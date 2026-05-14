@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.access_log import AccessLog
-from models.vehicle import Vehicle
+from models.vehicle import Vehicle, VehicleStatus
 
 
 async def get_stats(db: AsyncSession) -> dict[str, int]:
@@ -33,8 +33,33 @@ async def get_stats(db: AsyncSession) -> dict[str, int]:
         )
     ).scalar_one()
 
+    # Subscription stats
+    active_subscriptions = (
+        await db.execute(
+            select(func.count(Vehicle.id)).where(
+                Vehicle.status == VehicleStatus.ALLOWED,
+                Vehicle.valid_until.isnot(None),
+                Vehicle.valid_until >= now,
+            )
+        )
+    ).scalar_one()
+
+    expiring_soon_cutoff = now + timedelta(days=7)
+    expiring_soon_count = (
+        await db.execute(
+            select(func.count(Vehicle.id)).where(
+                Vehicle.status == VehicleStatus.ALLOWED,
+                Vehicle.valid_until.isnot(None),
+                Vehicle.valid_until >= now,
+                Vehicle.valid_until <= expiring_soon_cutoff,
+            )
+        )
+    ).scalar_one()
+
     return {
         "total_vehicles": total_vehicles,
         "today_access_total": today_access_total,
         "today_denied_total": today_denied_total,
+        "active_subscriptions": active_subscriptions,
+        "expiring_soon_count": expiring_soon_count,
     }

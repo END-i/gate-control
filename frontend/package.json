@@ -23,6 +23,7 @@
 		"@tailwindcss/vite": "^4.2.2",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/svelte": "^5.3.1",
+		"@types/hls.js": "^1.0.0",
 		"@types/node": "^25.6.0",
 		"@vitest/coverage-v8": "4.1.5",
 		"jsdom": "^29.1.0",
@@ -34,6 +35,7 @@
 		"vitest": "^4.1.5"
 	},
 	"dependencies": {
+		"hls.js": "^1.6.16",
 		"svelte-i18n": "^4.0.1"
 	},
 	"pnpm": {

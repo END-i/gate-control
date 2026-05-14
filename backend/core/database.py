@@ -10,9 +10,18 @@ from models import access_log as _access_log_models  # noqa: F401
 from models import security_audit as _security_audit_models  # noqa: F401
 from models import webhook_event as _webhook_event_models  # noqa: F401
 from models import relay_job as _relay_job_models  # noqa: F401
+from models import occupancy as _occupancy_models  # noqa: F401
 
 settings = get_settings()
-engine = create_async_engine(settings.database_url, echo=False, future=True)
+
+
+def _engine_kwargs(url: str) -> dict:
+    if url.startswith("sqlite"):
+        return {"connect_args": {"check_same_thread": False}}
+    return {}
+
+
+engine = create_async_engine(settings.database_url, echo=False, future=True, **_engine_kwargs(settings.database_url))
 SessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 

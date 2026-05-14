@@ -14,8 +14,7 @@
     "subtitle": "Контрол на портала",
     "dashboard": "Табло",
     "vehicles": "Автомобили",
-    "logs": "Логове",
-    "manualTrigger": "Ръчен тригер",
+    "logs": "Логове",    "audit": "Одитен журнал",    "manualTrigger": "Ръчен тригер",
     "gateOpened": "Порталът е отворен",
     "triggerFailed": "Грешка при релето",
     "systemOnline": "Система онлайн",
@@ -29,11 +28,22 @@
     "signingIn": "Влизане...",
     "failed": "Неуспешен вход"
   },
+  "ticker": {
+    "title": "Събития на живо",
+    "live": "на живо",
+    "connecting": "свързване",
+    "waiting": "Изчакваме събития…",
+    "allowed": "разрешен",
+    "denied": "забранен",
+    "connectFailed": "Неуспешно свързване с потока"
+  },
   "dashboard": {
     "title": "Табло",
     "totalVehicles": "Общо автомобили",
     "todayAccesses": "Достъпи днес",
     "todayDenied": "Отказани днес",
+    "activeSubscriptions": "Активни абонаменти",
+    "expiringSoon": "Изтичат (7 дни)",
     "failed": "Неуспешно зареждане на статистика"
   },
   "vehicles": {
@@ -52,7 +62,18 @@
     "plateValidation": "Номерът трябва да е 3-12 главни букви или цифри",
     "emptyOwner": "-",
     "allowed": "разрешен",
-    "blocked": "блокиран"
+    "blocked": "блокиран",
+    "validFrom": "Валиден от",
+    "validUntil": "Валиден до",
+    "permanent": "Постоянен",
+    "active": "Активен",
+    "expired": "Изтекъл",
+    "expiringSoon": "Изтича скоро",
+    "filter_all": "Всички",
+    "filter_active": "Активни",
+    "filter_expiring_soon": "Изтичат",
+    "filter_expired": "Изтекли",
+    "filter_permanent": "Постоянни"
   },
   "logs": {
     "title": "Логове за достъп",
@@ -73,5 +94,18 @@
     "close": "Затвори",
     "alt": "Снимка за достъп",
     "closeLabel": "Затвори прозореца със снимка"
+  },
+  "audit": {
+    "title": "Одитен журнал",
+    "eventType": "Тип събитие",
+    "actor": "Актьор",
+    "time": "Време",
+    "result": "Резултат",
+    "details": "Подробности",
+    "ok": "ок",
+    "fail": "грешка",
+    "empty": "Няма одитни събития",
+    "failed": "Неуспешно зареждане на журнала",
+    "clearFilters": "Изчисти"
   }
 }

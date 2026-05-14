@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from typing import Literal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
 from core.database import get_db
 from core.dependencies import get_current_admin, require_roles
+from core.karsun_api import remove_vehicle_from_camera, sync_vehicle_to_camera
 from core.rate_limit import enforce_rate_limit
 from crud.vehicle import (
     create_vehicle,
@@ -23,10 +25,11 @@ router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 async def get_vehicles(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
+    subscription: Literal["all", "active", "expiring_soon", "expired", "permanent"] = Query(default="all"),
     db: AsyncSession = Depends(get_db),
     _: Admin = Depends(get_current_admin),
 ) -> VehicleListResponse:
-    items, total = await list_vehicles(db, limit=limit, offset=offset)
+    items, total = await list_vehicles(db, limit=limit, offset=offset, subscription=subscription)
     return VehicleListResponse(items=items, total=total, limit=limit, offset=offset)
 
 
@@ -49,7 +52,10 @@ async def post_vehicle(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Vehicle already exists")
 
     vehicle = await create_vehicle(db, payload)
-    return VehicleRead.model_validate(vehicle)
+    synced = await sync_vehicle_to_camera(vehicle.license_plate, vehicle.status)
+    result = VehicleRead.model_validate(vehicle)
+    result.camera_sync = synced
+    return result
 
 
 @router.put("/{vehicle_id}", response_model=VehicleRead)
@@ -77,7 +83,10 @@ async def put_vehicle(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Vehicle already exists")
 
     updated = await update_vehicle(db, vehicle, payload)
-    return VehicleRead.model_validate(updated)
+    synced = await sync_vehicle_to_camera(updated.license_plate, updated.status)
+    result = VehicleRead.model_validate(updated)
+    result.camera_sync = synced
+    return result
 
 
 @router.delete("/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -98,4 +107,6 @@ async def remove_vehicle(
     if vehicle is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found")
 
+    plate = vehicle.license_plate
     await delete_vehicle(db, vehicle)
+    await remove_vehicle_from_camera(plate)

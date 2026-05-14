@@ -49,7 +49,13 @@ def run_migrations_online() -> None:
         await connectable.dispose()
 
     def _configure_connection(connection) -> None:
-        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+        is_sqlite = connection.dialect.name == "sqlite"
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
+            render_as_batch=is_sqlite,
+        )
         with context.begin_transaction():
             context.run_migrations()
 
