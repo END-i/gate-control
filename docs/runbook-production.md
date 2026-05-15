@@ -37,7 +37,7 @@ This runbook describes first-response steps for critical ANPR platform incidents
 
 ### 2. Webhook ingestion degraded
 
-1. Verify webhook auth mode and secrets (`WEBHOOK_AUTH_MODE`, `WEBHOOK_SHARED_SECRET`, `WEBHOOK_HMAC_SECRET`).
+1. Verify webhook auth mode and secrets (`WEBHOOK_AUTH_MODE`, `WEBHOOK_SHARED_SECRET`, `WEBHOOK_HMAC_SECRET`, `WEBHOOK_BASIC_USERNAME`, `WEBHOOK_BASIC_PASSWORD`).
 2. Check camera ITSAPI notification target URL is pointing to the correct backend endpoint.
 3. Send a synthetic webhook test event via `simulator.py` or `scripts/smoke-critical-flow.sh`.
 4. Check logs for signature/token failures and payload validation errors.

@@ -360,13 +360,13 @@ This phase defines non-negotiable execution rules for fully autonomous agent dev
 - ~~**[TODO — karsun] Prompt 48 — Backup/Restore API:**~~ ✅ done (2026-05-13) — `api/backup.py`; `GET /api/backup/export` + `POST /api/backup/import` with whitelist rebuild
 - ~~**[TODO — karsun] Prompt 49 — Windows deployment:**~~ ✅ done (2026-05-13) — `scripts/build-windows.bat`, `scripts/start.bat`, `docs/DEPLOYMENT.md`
 - ~~**[TODO — karsun] Prompt 50 — Karsun config + docs:**~~ ✅ done (2026-05-13) — `KARSUN_*` vars in `config.py` + `.env.example`; `docs/CAMERA_SETUP.md`
-- **[TODO — camera] Webhook auth mode `basic`:** Dahua HTTP event notifications use Basic Auth, not `X-Webhook-Token`; add `WEBHOOK_AUTH_MODE=basic` support or document camera-side custom header configuration
+- ~~**[TODO — camera] Webhook auth mode `basic`:**~~ ✅ done (2026-05-14) — `WEBHOOK_AUTH_MODE` supports `basic`; backend validates `Authorization: Basic ...` against `WEBHOOK_BASIC_USERNAME` / `WEBHOOK_BASIC_PASSWORD`
 - ~~**[TODO — camera] Image field name:** confirm whether camera firmware sends `image` or `plateImage`; update webhook to accept both or align with confirmed field name~~ ✅ `form.get("image") or form.get("plateImage")` — webhook now accepts both (2026-04-30)
 - **[TODO — camera] Relay strategy:** evaluate replacing external `trigger_relay()` HTTP POST with Dahua CGI command (`/cgi-bin/accessControl.cgi`) using the camera's built-in Digital Output; document decision and implement if chosen
 - **[TODO — camera] Additional metadata fields:** Dahua payload may include `channelName`, `dateTime`, `country`, `plateColor`, `vehicleColor`, `direction`; decide whether to store or log these for audit purposes
-- **[TODO — subscriptions] Prompt 35:** DB migration — add `valid_from` / `valid_until` nullable columns to `vehicles`, update model + schemas
-- **[TODO — subscriptions] Prompt 36:** Access check — deny if `valid_until` is in the past; add `get_expiring_soon()` CRUD helper + unit tests
-- **[TODO — subscriptions] Prompt 37:** Expiry worker — background task marks expired vehicles as `blocked`, emits audit event `subscription_expired`
+- ~~**[TODO — subscriptions] Prompt 35:**~~ ✅ done (2026-05-13) — `valid_from` / `valid_until` migration + model/schemas complete
+- ~~**[TODO — subscriptions] Prompt 36:**~~ ✅ done (2026-05-13) — access check enforces active subscription window; `get_expiring_soon()` + tests added
+- ~~**[TODO — subscriptions] Prompt 37:**~~ ✅ done (2026-05-13) — expiry worker blocks expired vehicles and emits `subscription_expired` audit events
 - ~~**[TODO — subscriptions] Prompt 38:**~~ ✅ Frontend + Stats — vehicle form date pickers, table expiry badge, dashboard widgets, i18n keys
 - ~~**[TODO — monitoring] Prompt 39:**~~ ✅ Occupancy counter — `direction` field → enter/leave, `/api/occupancy` REST + SSE, PostgreSQL persistence, unit tests
 - ~~**[TODO — monitoring] Prompt 40:**~~ ✅ Live event ticker — `/api/logs/stream-token` SSE, `LiveTicker.svelte` component on Dashboard with plate/decision badge, i18n, Vitest test
@@ -595,7 +595,7 @@ New business requirements (received 2026-05-11) pivot the hardware platform from
 
 1. **[karsun] Obtain Karsun JS-LPRO1 official HTTP API documentation from vendor** — replace stubs in `core/karsun_api.py` with real `httpx` calls
 2. **[monitoring] Implement Phase 12 (Prompts 39–42): real-time monitoring** — start with occupancy counter (Prompt 39)
-3. **[camera] Resolve Dahua ITC413-PW4D-IZ1 webhook auth mode** (`WEBHOOK_AUTH_MODE=basic`) and relay strategy (CGI API vs. direct DO)
+3. **[camera] Resolve Dahua ITC413-PW4D-IZ1 relay strategy** (CGI API vs. direct DO)
 4. Expand E2E suite to full happy-path and deny-path with relay side-effect verification
 5. Add nightly restore verification in CI/staging using existing backup/restore scripts
 6. Tighten security job policy for actionable high/critical findings
@@ -724,7 +724,7 @@ The Karsun JS-LPRO1 operates in **Edge Computing mode**: it stores a whitelist/b
 |---|------|----------------------|-----------------|-----------------|
 | 1 | Plate field name | `plate_number` (snake_case) | `plateNumber` (camelCase via ITSAPI) | ✅ Done — `form.get("plate_number") or form.get("plateNumber")` |
 | 2 | Image field name | `image` | `plateImage` (ITSAPI standard) | ✅ Done — `form.get("image") or form.get("plateImage")` |
-| 3 | Webhook auth | `X-Webhook-Token` header | HTTP Basic Auth (ITSAPI) or Digest Auth | Pending — add `WEBHOOK_AUTH_MODE=basic` or configure custom header on camera |
+| 3 | Webhook auth | `WEBHOOK_AUTH_MODE=token|hmac|basic` | HTTP Basic Auth (ITSAPI) or Digest Auth | ✅ Done — `basic` mode validates `Authorization: Basic ...` with dedicated credentials |
 | 4 | Relay trigger | External HTTP POST to `RELAY_IP` | Built-in DO relay (hardware) or Dahua CGI API | Pending — evaluate `POST /cgi-bin/accessControl.cgi` vs. separate relay endpoint |
 | 5 | Extra metadata | Ignored | `channelName`, `dateTime`, `country`, `plateColor`, `vehicleColor`, `direction` | Decide: log only or store for audit |
 
@@ -749,6 +749,6 @@ These are currently ignored by the webhook — store or log if needed for audit 
 ### Implementation order
 
 1. ✅ Resolve field name mapping (`plateNumber`, `plateImage`) — done
-2. Resolve auth mode (ITSAPI Basic Auth vs. custom header)
+2. ✅ Resolve auth mode (ITSAPI Basic Auth vs. custom header) — done (`WEBHOOK_AUTH_MODE=basic`, 2026-05-14)
 3. Relay strategy decision (hardware DO direct-wire vs. CGI API command)
 4. Decision on extra metadata fields (log-only vs. store in DB)

@@ -76,10 +76,15 @@ The Dahua camera acts as a pure sensor; all access decisions are made by the Fas
 
 ### Authentication
 
-The camera supports **HTTP Basic Auth** for outgoing event push requests. The server currently expects `X-Webhook-Token` header. Options:
+The server supports both token/HMAC and **HTTP Basic Auth** for incoming camera webhooks.
 
-1. Configure the camera to send a custom header (if supported by firmware) matching `WEBHOOK_SHARED_SECRET`
-2. Or add `WEBHOOK_AUTH_MODE=basic` support to the server (see TODO in plan.md)
+Recommended for Dahua ITSAPI:
+
+1. Set `WEBHOOK_AUTH_MODE=basic` in backend `.env`
+2. Set `WEBHOOK_BASIC_USERNAME` / `WEBHOOK_BASIC_PASSWORD`
+3. Configure Dahua event push credentials to the same username/password
+
+Alternative fallback: configure custom camera header and keep `WEBHOOK_AUTH_MODE=token` with `WEBHOOK_SHARED_SECRET`.
 
 ### ITSAPI payload fields sent by camera
 
